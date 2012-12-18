@@ -1,0 +1,39 @@
+\#include "xmlvm.h"
+\#include "java_lang_String.h"
+#import <UIKit/UIKit.h>
+\#include "${mangledClassNameImpl}.h"
+\#include "${mangledClassNameImpl}CodenameOne.h"
+
+JAVA_LONG ${mangledClassNameImpl}CodenameOne_initializeNativePeer__(JAVA_OBJECT me) {
+    ${mangledClassNameImpl}* i = [[${mangledClassNameImpl} alloc] init];
+    return i;
+}
+
+void ${mangledClassNameImpl}CodenameOne_releaseNativePeerInstance___long(JAVA_OBJECT me, JAVA_LONG l) {
+    ${mangledClassNameImpl}* i = (${mangledClassNameImpl}*)l;
+    [i release];
+}
+
+extern NSData* arrayToData(JAVA_OBJECT arr);
+extern NSString* toNSString(JAVA_OBJECT str);
+extern JAVA_OBJECT nsDataToByteArr(NSData *data);
+extern JAVA_OBJECT nsDataToBooleanArray(NSData *data);
+extern JAVA_OBJECT nsDataToCharArray(NSData *data);
+extern JAVA_OBJECT nsDataToShortArray(NSData *data);
+extern JAVA_OBJECT nsDataToIntArray(NSData *data);
+extern JAVA_OBJECT nsDataToLongArray(NSData *data);
+extern JAVA_OBJECT nsDataToFloatArray(NSData *data);
+extern JAVA_OBJECT nsDataToDoubleArray(NSData *data);
+
+void xmlvm_init_native_${mangledClassNameImpl}CodenameOne() {}
+#foreach( $method in $methods )
+${method.returnTypeXMLVM} ${mangledClassNameImpl}CodenameOne_${method.methodName}___${method.mangledParamTypes}(JAVA_OBJECT me #foreach( $param in $method.parameters ) , ${param.parameterTypeXMLVM} ${param.parameterName} #end ) {
+    ${mangledClassNameImpl}* ptr = (${mangledClassNameImpl}*)((${mangledClassNameImpl}CodenameOne*) me)->fields.${mangledClassNameImpl}CodenameOne.nativePeer_;
+    #if($method.returnTypeXMLVM != "void")return #end #if( $method.returnTypeTransformation != "") ${method.returnTypeTransformation}( #end [ptr ${method.methodName} #foreach( $param in $method.parameters ) #if( !$foreach.first)${param.parameterName}#end : ${param.nsValue} #end] #if( $method.returnTypeTransformation != "") ) #end;
+}
+#end
+JAVA_BOOLEAN ${mangledClassNameImpl}CodenameOne_isSupported__(JAVA_OBJECT me) {
+    ${mangledClassNameImpl}* ptr = (${mangledClassNameImpl}*)((${mangledClassNameImpl}CodenameOne*) me)->fields.${mangledClassNameImpl}CodenameOne.nativePeer_;
+return [ptr isSupported];
+}
+

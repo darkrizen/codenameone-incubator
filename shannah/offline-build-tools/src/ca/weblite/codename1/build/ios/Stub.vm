@@ -1,0 +1,17 @@
+package $packageName;
+
+public class $stubClassName implements $implements {
+    private $implClassName impl;
+    public $stubClassName(){
+        impl = new $implClassName();
+    }
+
+#foreach( $method in $methods )
+    public $method.returnType $method.methodName (#foreach( $param in $method.parameters )$param.parameterType $param.parameterName #if( $foreach.hasNext ), #end #end ){
+        #if( ${method.returnType} != "void") return #end impl.${method.methodName}(#foreach( $param in $method.parameters )$param.parameterName #if( $foreach.hasNext ), #end #end );
+    }
+#end
+    public boolean isSupported(){
+        return impl.isSupported();
+    }
+}

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="CodenameOneIOSProcessor" default="default" basedir=".">
+    <description>Builds, tests, and runs the project CodenameOneIOSProcessor.</description>
+    <import file="nbproject/build-impl.xml"/>
+    <!--
+
+    There exist several targets which are by default empty and which can be 
+    used for execution of your tasks. These targets are usually executed 
+    before and after some main targets. They are: 
+
+      -pre-init:                 called before initialization of project properties
+      -post-init:                called after initialization of project properties
+      -pre-compile:              called before javac compilation
+      -post-compile:             called after javac compilation
+      -pre-compile-single:       called before javac compilation of single file
+      -post-compile-single:      called after javac compilation of single file
+      -pre-compile-test:         called before javac compilation of JUnit tests
+      -post-compile-test:        called after javac compilation of JUnit tests
+      -pre-compile-test-single:  called before javac compilation of single JUnit test
+      -post-compile-test-single: called after javac compilation of single JUunit test
+      -pre-jar:                  called before JAR building
+      -post-jar:                 called after JAR building
+      -post-clean:               called after cleaning build products
+
+    (Targets beginning with '-' are not intended to be called on their own.)
+
+    Example of inserting an obfuscator after compilation could look like this:
+
+        <target name="-post-compile">
+            <obfuscate>
+                <fileset dir="${build.classes.dir}"/>
+            </obfuscate>
+        </target>
+
+    For list of available properties check the imported 
+    nbproject/build-impl.xml file. 
+
+
+    Another way to customize the build is by overriding existing main targets.
+    The targets of interest are: 
+
+      -init-macrodef-javac:     defines macro for javac compilation
+      -init-macrodef-junit:     defines macro for junit execution
+      -init-macrodef-debug:     defines macro for class debugging
+      -init-macrodef-java:      defines macro for class execution
+      -do-jar-with-manifest:    JAR building (if you are using a manifest)
+      -do-jar-without-manifest: JAR building (if you are not using a manifest)
+      run:                      execution of project 
+      -javadoc-build:           Javadoc generation
+      test-report:              JUnit report generation
+
+    An example of overriding the target for project execution could look like this:
+
+        <target name="run" depends="CodenameOneIOSProcessor-impl.jar">
+            <exec dir="bin" executable="launcher.exe">
+                <arg file="${dist.jar}"/>
+            </exec>
+        </target>
+
+    Notice that the overridden target depends on the jar target and not only on 
+    the compile target as the regular run target does. Again, for a list of available 
+    properties which you can use, check the target you are overriding in the
+    nbproject/build-impl.xml file. 
+
+    -->
+    
+    <property name="install.path" location="."/>
+    <property name="tools.path" location="${install.path}/tools"/>
+    <property name="codename1.path" location="${tools.path}/codenameone-readonly"/>
+    <property name="codename1.svn.url" value="http://codenameone.googlecode.com/svn/trunk/"/>
+    <property name="xmlvm.path" location="${codename1.path}/Ports/iOSPort/xmlvm"/>
+    <property name="xmlvm.install.path" location="${xmlvm.path}/install"/>
+    <property name="xmlvm.bin.path" location="${xmlvm.install.path}/bin/xmlvm"/>
+    <property name="buildios.template.path" location="./templates/build-ios.xml"/>
+    <property name="buildios.dist.path" location="./dist/build-ios.xml"/>
+    
+    <condition property="codename1.missing">
+        <not>
+                <available file="${codename1.path}"/>
+        </not>
+    </condition>
+    <condition property="tools.missing">
+        <not>
+                <available file="${tools.path}"/>
+        </not>
+    </condition>
+    
+    <target name="checkout-codename1" if="codename1.missing" depends="make-tools-dir">
+        
+        <!-- First checkout codename1 -->
+        <exec executable="svn">
+            <arg value="checkout"/>
+            <arg value="${codename1.svn.url}"/>
+            <arg value="${codename1.path}"/>
+        </exec>
+        
+    </target>
+    
+    <target name="update-codename1" depends="checkout-codename1">
+        <exec executable="svn">
+            <arg value="update"/>
+            <arg value="${codename1.path}"/>
+        </exec>
+    </target>
+    
+    <target name="make-tools-dir" if="tools.missing">
+        
+        <mkdir dir="${tools.path}"/>
+    </target>
+    
+    <target name="install" depends="update-codename1">
+        
+        <!-- Now patch XMLVM -->
+        <replace file="${xmlvm.path}/lib/redlist.txt" token="java.nio.CharSequenceAdapter" value=""/>
+        
+        <exec executable="ant" dir="${xmlvm.path}"/>
+        <exec executable="ant" dir="${xmlvm.path}">
+            <arg value="install"/>
+            <arg line="'-Dxmlvm.install=${xmlvm.install.path}'"/>
+        </exec>
+        
+        
+        <!-- Create Ant Task -->
+        <copy file="${buildios.template.path}" tofile="${buildios.dist.path}"/>
+        
+        <replace file="${buildios.dist.path}" token="___CODENAMEONE_PATH___" value="${codename1.path}"/>
+        <replace file="${buildios.dist.path}" token="___BUILDTOOLS_PATH___" value="${install.path}"/>
+        <replace file="${buildios.dist.path}" token="___XMLVM_PATH___" value="${xmlvm.bin.path}"/>
+        
+        
+        
+        
+    </target>
+</project>

@@ -1,0 +1,117 @@
+<project>
+
+<target name="build-for-ios-device-locally" depends="clean,copy-ios-override,jar,clean-override">
+        
+        <!-- Update to point to the CodenameOne repository in your system -->
+        <property name="codename1.repo.path" location="___CODENAMEONE_PATH___"/>
+        
+        <!-- Update to point to the proper location of xmlvm binary on your system -->
+        <property name="xmlvm.path" location="___XMLVM_PATH___"/>
+        
+        <!-- Update to point to the proper location of the ANT binary on your system -->
+        <property name="ant.path" location="/usr/bin/ant"/>
+        
+        <!-- Update to point to the proper location of python binary on your system -->
+        <property name="python.path" location="/usr/bin/python"/>
+        
+        <!-- Update to point to the CodenameOneIOSProcessor jar file -->
+        <property name="iosbuildtools.path" location="___BUILDTOOLS_PATH___"/>
+        <property name="configureMainStub.path" location="${iosbuildtools.path}/scripts/configure_main_stub.php"/>
+        <property name="processor.jar.path" location="${iosbuildtools.path}/dist/CodenameOneIOSProcessor.jar"/>
+        <property name="velocity.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7.jar"/>
+        <property name="velocity.dep.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7-dep.jar"/>
+        <property name="this.project.path" location="."/>
+
+        <!-- You should need to change anything below this line -->
+        <property name="distapp.path" location="./dist/app"/>
+        <property name="codename1.path" location="${codename1.repo.path}/CodenameOne"/>
+        <property name="codename1.factory.path" location="${codename1.repo.path}/Factory"/>
+        <property name="codename1.iosport.path" location="${codename1.repo.path}/Ports/iOSPort"/>
+        
+        <property name="buildscripts.path" location="${iosbuildtools.path}/scripts"/>
+        <property name="xcodeadd.path" location="${iosbuildtools.path}/scripts/xcodeadd.py"/>
+        <property name="resources.path" location="${distapp.path}/btres"/>
+        <property name="xcodeproj.path" location="${distapp.path}/dist/${codename1.displayName}.xcodeproj"/>
+        <delete dir="${distapp.path}"/>
+        <exec executable="${xmlvm.path}">
+            <arg value="--skeleton=iphone"/>
+            <arg value="--out=${distapp.path}"/>
+            <arg value="--app-name=${codename1.displayName}"/>
+            <arg value="-DBundleIdentifier=${codename1.ios.appid}"/>
+            <arg value="-DBundleVersion=${codename1.version}"/>
+            <arg value="-DBundleDisplayName=${codename1.displayName}"/>
+            <arg value="--lib=${codename1.iosport.path}/nativeSources/libzbar.a"/>
+        </exec>
+        
+        <replace file="${distapp.path}/xmlvm.properties" token="xmlvm.backend=objc"
+            value="xmlvm.backend=c"/>
+        <replaceregexp file="${distapp.path}/xmlvm.properties" match="bundle\.identifier=.*"
+            replace="bundle.identifier=${codename1.ios.appid}"/>
+        <replaceregexp file="${distapp.path}/xmlvm.properties" match="bundle\.version=.*"
+            replace="bundle.identifier=${codename1.version}"/>
+       
+       <copy todir="${distapp.path}/src/java">
+           
+            <fileset dir="${codename1.path}/src"/>
+            <fileset dir="${codename1.factory.path}/src"/>
+            <fileset dir="${codename1.iosport.path}/src"/>
+            <fileset dir="src"/>
+       </copy>
+       <mkdir dir="${distapp.path}/src/tmpbuild"/>
+       <delete dir="${distapp.path}/src/java/my"/>
+       <javac fork="yes"
+            srcdir="${distapp.path}/src/java"
+            destdir="${distapp.path}/src/tmpbuild"
+            includes="**/*.java"
+            classpath="${javac.classpath}:${build.classes.dir}:${dist.jar}:${processor.jar.path}:${velocity.jar.path}:${velocity.dep.jar.path}:${distapp.path}/src/java"
+            >
+           <compilerarg line="-processor ca.weblite.codename1.build.ios.NativeAnnotationProcessor"/>
+           <compilerarg value="-s"/>
+            <compilerarg path="${distapp.path}/src/java"/>
+       </javac>
+       <mkdir dir="${resources.path}"/>
+       <copy todir="${resources.path}">
+           <fileset dir="${codename1.iosport.path}/nativeSources" includes="**/*.a,**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
+           <fileset dir="src" includes="**/*.a,**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
+       </copy>
+       
+            
+       
+       <mkdir dir="${distapp.path}/src/objc"/>
+       <copy todir="${distapp.path}/src/objc">
+           <fileset dir="${codename1.iosport.path}/nativeSources"/>
+           <fileset dir="native/ios" includes="*.m,*.h"/>
+           <fileset dir="${distapp.path}/src/java/" includes="*.h,*.m"/>
+       </copy>
+       <zip zipfile="${distapp.path}/nativeios.jar" basedir="${distapp.path}/src/" includes="objc/**"/>
+       <replace file="${distapp.path}/nbproject/project.properties"
+            token="run.classpath="
+            value="run.classpath=nativeios.jar:"/>
+       <replace file="${distapp.path}/nbproject/build-Xcode.xml"
+            token="-Xmx512m"
+            value="-Xmx2G" />
+       
+       <copy file="${iosbuildtools.path}/templates/MainStub.java"
+            
+             tofile="${distapp.path}/src/java/com/codename1/impl/ios/Main.java" />
+       
+       <exec executable="/usr/bin/php">
+           <arg path="${configureMainStub.path}"/>
+           <arg path="${this.project.path}"/>
+           <arg path="${distapp.path}/src/java/com/codename1/impl/ios/Main.java"/>
+       </exec>
+       
+       <replace file="${distapp.path}/src/java/com/codename1/impl/ios/Main.java"
+            token="#MAIN_CLASS#"
+            value="${codename1.packageName}.${codename1.mainName}"/>
+       <delete dir="${distapp.path}/src/java/my"/>
+       <exec executable="${ant.path}" dir="${distapp.path}/"/>
+       <apply executable="${python.path}" dir="${buildscripts.path}">
+           <arg file="${xcodeadd.path}"/>
+           <arg file="${xcodeproj.path}/project.pbxproj"/>
+           <fileset dir="${resources.path}"/>
+       </apply>
+      
+       
+    </target>
+</project>

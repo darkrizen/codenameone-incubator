@@ -1,0 +1,20 @@
+package $packageName;
+
+public class $implClassName {
+    private long nativePeer;
+    private native long initializeNativePeer();
+    private native void releaseNativePeerInstance(long peer);
+    
+    public ${implClassName}(){
+        nativePeer = initializeNativePeer();
+    }
+
+    public void finalize(){
+        releaseNativePeerInstance(nativePeer);
+    }
+
+#foreach( $method in $methods )
+    public native $method.returnType $method.methodName (#foreach( $param in $method.parameters )$param.parameterType $param.parameterName #if( $foreach.hasNext ), #end #end );
+#end
+    public native boolean isSupported();
+}
