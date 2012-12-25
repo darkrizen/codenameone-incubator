@@ -6,7 +6,7 @@ Synopsis
 
 A set of tools for building CodenameOne applications offline (i.e. without using the build server).
 
-Currently there is support only for iOS builds, but I plan to work on the rest as required.
+Currently there is support only for iOS and Android builds, but I plan to work on the rest as required.
 
 Requirements
 ============
@@ -36,8 +36,8 @@ e.g.
 
 This will add an ANT target called "build-for-ios-device-locally".
 
-Building Your Application
-=========================
+Building Your Application for iOS
+==================================
 
 Assuming you have added the <import> into your application's build.xml file, you can either build this target from the command line:
 
@@ -53,3 +53,16 @@ Once you are in Xcode, you should be able to run/build the app like a normal nat
 
 If you have your iPhone connected with a valid provisioning profile, you should be able to run and debug your application directly on your iPhone (or iPad).
 
+
+Building Your Application for Android
+=====================================
+
+Assuming you have added the <import> into your application's build.xml file, you can either build this target from the command line:
+
+$ cd /path/to/my-project
+$ ant build-for-android-device-locally
+
+Or you can do it from inside Netbeans's File tab, by right-clicking "build.xml", then select "Run Target" > "Other Targets" > "build-for-android-device-locally".
+
+This will compile your application and build the apk.  If you have an appropriate Android device 
+connected  to your computer, it will attempt to install the apk onto the device.
