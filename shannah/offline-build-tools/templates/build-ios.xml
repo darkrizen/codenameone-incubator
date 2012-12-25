@@ -67,6 +67,11 @@
 	   <fileset dir="native/android" includes="**/*.java"/>
 	   <fileset dir="src" includes="**/*.java"/>
    	</copy>
+   	<copy todir="${android.assets.path}">
+   		<fileset dir="${codename1.androidport.path}/src" includes="**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
+   		<fileset dir="native/android" includes="**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
+	   <fileset dir="src" includes="**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
+   	</copy>
    	<copy file="${iosbuildtools.path}/templates/AndroidStub.java"
         tofile="${android.src.path}/com/codename1/impl/android/AndroidStub.java" />
    <copy file="${iosbuildtools.path}/templates/AndroidManifest.xml"
