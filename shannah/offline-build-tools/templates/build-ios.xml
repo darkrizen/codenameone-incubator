@@ -1,37 +1,155 @@
 <project>
+<!-- Update to point to the CodenameOne repository in your system -->
+<property name="codename1.repo.path" location="___CODENAMEONE_PATH___"/>
+
+<!-- Update to point to the proper location of xmlvm binary on your system -->
+<property name="xmlvm.path" location="___XMLVM_PATH___"/>
+
+<!-- Update to point to the proper location of the ANT binary on your system -->
+<property name="ant.path" location="/usr/bin/ant"/>
+
+<!-- Update to point to the proper location of python binary on your system -->
+<property name="python.path" location="/usr/bin/python"/>
+
+<!-- Update to point to the CodenameOneIOSProcessor jar file -->
+<property name="iosbuildtools.path" location="___BUILDTOOLS_PATH___"/>
+<loadproperties srcFile="${iosbuildtools.path}/codename1.properties"/>
+
+
+<property name="configureMainStub.path" location="${iosbuildtools.path}/scripts/configure_main_stub.php"/>
+<property name="processor.jar.path" location="${iosbuildtools.path}/dist/CodenameOneIOSProcessor.jar"/>
+<property name="velocity.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7.jar"/>
+<property name="velocity.dep.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7-dep.jar"/>
+<property name="this.project.path" location="."/>
+
+<!-- You should need to change anything below this line -->
+<property name="distapp.path" location="./dist/app"/>
+<property name="codename1.path" location="${codename1.repo.path}/CodenameOne"/>
+<property name="codename1.factory.path" location="${codename1.repo.path}/Factory"/>
+<property name="codename1.iosport.path" location="${codename1.repo.path}/Ports/iOSPort"/>
+<property name="codename1.androidport.path" location="${codename1.repo.path}/Ports/Android"/>
+
+<property name="buildscripts.path" location="${iosbuildtools.path}/scripts"/>
+<property name="xcodeadd.path" location="${iosbuildtools.path}/scripts/xcodeadd.py"/>
+<property name="resources.path" location="${distapp.path}/btres"/>
+<property name="xcodeproj.path" location="${distapp.path}/dist/${codename1.displayName}.xcodeproj"/>
+
+<!-- android settings -->
+<property name="android.dist.path" location="./dist/android"/>
+<property name="android.assets.path" location="${android.dist.path}/assets"/>
+<property name="android.res.path" location="${android.dist.path}/res"/>
+<property name="android.manifest.path" location="${android.dist.path}/AndroidManifest.xml"/>
+<property name="android.src.path" location="${android.dist.path}/src"/>
+<property name="android.bin.path" location="${android.dist.path}/bin"/>
+<property name="android.obj.path" location="${android.dist.path}/obj"/>
+
+<property name="android.sdk.path" location="/Volumes/Windows VMS/adt-bundle-mac-x86_64/sdk"/>
+<property name="android.sdk.version" value="17"/>
+<property name="dx.path" location="${android.sdk.path}/platform-tools/dx"/>
+<property name="aapt.path" location="${android.sdk.path}/platform-tools/aapt"/>
+<property name="adb.path" location="${android.sdk.path}/platform-tools/adb"/>
+<property name="android.sdk.jar.path" location="${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar"/>
+
+
+
+
+
+<target name="build-for-android-device-locally" depends="clean,copy-ios-override,jar,clean-override">
+	<delete dir="${android.dist.path}"/>
+	<mkdir dir="${android.assets.path}"/>
+	<mkdir dir="${android.res.path}"/>
+	<mkdir dir="${android.src.path}"/>
+	<mkdir dir="${android.bin.path}"/>
+	<mkdir dir="${android.obj.path}"/>
+	<copy todir="${android.src.path}">
+		<fileset dir="${codename1.path}/src" includes="**/*.java"/>
+	   <fileset dir="${codename1.androidport.path}/src" includes="**/*.java"/>
+	   <fileset dir="native/android" includes="**/*.java"/>
+	   <fileset dir="src" includes="**/*.java"/>
+   	</copy>
+   	<copy file="${iosbuildtools.path}/templates/AndroidStub.java"
+        tofile="${android.src.path}/com/codename1/impl/android/AndroidStub.java" />
+   <copy file="${iosbuildtools.path}/templates/AndroidManifest.xml"
+        tofile="${android.dist.path}/AndroidManifest.xml"/>
+   
+    <replace file="${android.src.path}/com/codename1/impl/android/AndroidStub.java"
+            token="#MAIN_CLASS#"
+            value="${codename1.packageName}.${codename1.mainName}"/>    
+   	<replace file="${android.dist.path}/AndroidManifest.xml"
+            token="#PACKAGE_NAME#"
+            value="${codename1.packageName}"/> 
+    <replace file="${android.dist.path}/AndroidManifest.xml"
+            token="#APPLICATION_NAME#"
+            value="${codename1.displayName}"/>    
+   	
+   	<javac srcdir="${android.src.path}"
+   		  destdir="${android.obj.path}"
+   		  classpath="${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar:${android.obj.path}"
+   		  source="1.6"
+   		  target="1.6"
+   		  debug="on"/>
+   		  
+   		  
+   	<exec executable="${dx.path}">
+   		<arg value="--dex"/>
+   		<arg value="--verbose"/>
+   		<arg line="--output='${android.bin.path}/classes.dex'"/>
+   		<arg file="${android.obj.path}"/>
+   	</exec>  
+   	<exec executable="${aapt.path}">
+   		<arg value="package"/>
+   		<arg value="-v"/>
+   		<arg value="-f"/>
+   		<arg value="-M"/>
+   		<arg file="${android.manifest.path}"/>
+   		<arg value="-A"/>
+   		<arg file="${android.assets.path}"/>
+   		<arg value="-I"/>
+   		<arg file="${android.sdk.jar.path}"/>
+   		<arg value="-F"/>
+   		<arg file="${android.bin.path}/${codename1.displayName}.unsigned.apk"/>
+   		<arg file="${android.bin.path}"/>
+   	</exec>
+   	<!--
+   	<signjar jar="${android.bin.path}/${codename1.displayName}.unsigned.apk"
+   		signedjar="${android.bin.path}/${codename1.displayName}.signed.apk"
+   		keystore="${codename1.android.keystore}"
+   		storepass="${codename1.android.keystorePassword}"
+   		keypass="${codename1.android.keystorePassword}"
+   		alias="${codename1.android.keystoreAlias}"
+   		verbose="true"/>
+   	-->
+   		
+   	<exec executable="jarsigner">
+   		<arg value="-verbose"/>
+   		<arg value="-digestalg"/>
+   		<arg value="SHA1"/>
+   		<arg value="-sigalg"/>
+   		<arg value="MD5withRSA"/>
+   		<arg value="-keystore"/>
+   		<arg file="${codename1.android.keystore}"/>
+   		<arg value="-storepass"/>
+   		<arg value="${codename1.android.keystorePassword}"/>
+   		<arg value="-keypass"/>
+   		<arg value="${codename1.android.keystorePassword}"/>
+   		<arg value="-signedjar"/>
+   		<arg file="${android.bin.path}/${codename1.displayName}.signed.apk"/>
+   		<arg file="${android.bin.path}/${codename1.displayName}.unsigned.apk"/>
+   		<arg value="${codename1.android.keystoreAlias}"/>
+   	</exec>
+   		
+   	<exec executable="${adb.path}">
+   		<arg value="-d"/>
+   		<arg value="install"/>
+   		<arg value="-r"/>
+   		<arg file="${android.bin.path}/${codename1.displayName}.signed.apk"/>
+   	</exec>
+
+</target>
 
 <target name="build-for-ios-device-locally" depends="clean,copy-ios-override,jar,clean-override">
         
-        <!-- Update to point to the CodenameOne repository in your system -->
-        <property name="codename1.repo.path" location="___CODENAMEONE_PATH___"/>
         
-        <!-- Update to point to the proper location of xmlvm binary on your system -->
-        <property name="xmlvm.path" location="___XMLVM_PATH___"/>
-        
-        <!-- Update to point to the proper location of the ANT binary on your system -->
-        <property name="ant.path" location="/usr/bin/ant"/>
-        
-        <!-- Update to point to the proper location of python binary on your system -->
-        <property name="python.path" location="/usr/bin/python"/>
-        
-        <!-- Update to point to the CodenameOneIOSProcessor jar file -->
-        <property name="iosbuildtools.path" location="___BUILDTOOLS_PATH___"/>
-        <property name="configureMainStub.path" location="${iosbuildtools.path}/scripts/configure_main_stub.php"/>
-        <property name="processor.jar.path" location="${iosbuildtools.path}/dist/CodenameOneIOSProcessor.jar"/>
-        <property name="velocity.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7.jar"/>
-        <property name="velocity.dep.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7-dep.jar"/>
-        <property name="this.project.path" location="."/>
-
-        <!-- You should need to change anything below this line -->
-        <property name="distapp.path" location="./dist/app"/>
-        <property name="codename1.path" location="${codename1.repo.path}/CodenameOne"/>
-        <property name="codename1.factory.path" location="${codename1.repo.path}/Factory"/>
-        <property name="codename1.iosport.path" location="${codename1.repo.path}/Ports/iOSPort"/>
-        
-        <property name="buildscripts.path" location="${iosbuildtools.path}/scripts"/>
-        <property name="xcodeadd.path" location="${iosbuildtools.path}/scripts/xcodeadd.py"/>
-        <property name="resources.path" location="${distapp.path}/btres"/>
-        <property name="xcodeproj.path" location="${distapp.path}/dist/${codename1.displayName}.xcodeproj"/>
         <delete dir="${distapp.path}"/>
         <exec executable="${xmlvm.path}">
             <arg value="--skeleton=iphone"/>
