@@ -34,6 +34,10 @@
 <property name="resources.path" location="${distapp.path}/btres"/>
 <property name="xcodeproj.path" location="${distapp.path}/dist/${codename1.displayName}.xcodeproj"/>
 
+<!-- IOS Settings -->
+<property name="ios.sdk.path" location="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.0.sdk"/>
+
+
 <!-- android settings -->
 <property name="android.dist.path" location="./dist/android"/>
 <property name="android.assets.path" location="${android.dist.path}/assets"/>
@@ -50,11 +54,107 @@
 <property name="adb.path" location="${android.sdk.path}/platform-tools/adb"/>
 <property name="android.sdk.jar.path" location="${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar"/>
 
+<!-- JavaSE Settings -->
+<property name="codename1.javaseport.path" location="${codename1.repo.path}/Ports/JavaSE"/>
+<property name="javase.dist.path" location="./dist/JavaSE"/>
+<property name="javase.build.path" location="${javase.dist.path}/build"/>
+<property name="javase.src.path" location="${javase.dist.path}/src"/>
+<property name="jdk.path" location="/Library/Java/JavaVirtualMachines/jdk1.7.0_10.jdk/Contents/Home"/>
 
 
 
+<target name="build-for-JavaSE-locally" depends="build-skins">
+	<delete dir="${javase.dist.path}"/>
+	<mkdir dir="${javase.src.path}"/>
+	<mkdir dir="${javase.build.path}"/>
+	
+	<copy todir="${javase.src.path}">
+		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
+		<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/"/>
+		<fileset dir="src" excludes="**/svn/"/>
+		<fileset dir="${codename1.repo.path}/Skins" includes="**/*.skin"/>
+		
+	</copy>
+	<copy todir="${javase.src.path}" file="${iosbuildtools.path}/templates/JavaSEStub.java"/>
+	<replace file="${javase.src.path}/JavaSEStub.java"
+            token="#MAIN_CLASS#"
+            value="${codename1.packageName}.${codename1.mainName}"/>
+               
+	<javac srcdir="${javase.src.path}"
+   		  destdir="${javase.build.path}"
+   		  classpath="${jdk.path}/jre/lib/jfxrt.jar:${jdk.path}/jre/lib/javaws.jar"
 
-<target name="build-for-android-device-locally" depends="clean,copy-ios-override,jar,clean-override">
+   		  debug="on"/>
+   	<copy todir="${javase.build.path}">
+   		<fileset dir="${javase.src.path}" excludes="**/*.java"/>
+   	</copy>
+   	<unjar src="${codename1.javaseport.path}/lib/sqlitejdbc-v056.jar" dest="${javase.build.path}"/>
+   	<jar destfile="${javase.dist.path}/${codename1.displayName}.jar">
+   		<fileset dir="${javase.build.path}" includes="**/*"/>
+   		<manifest>
+   			<attribute name="Main-Class" value="JavaSEStub"/>
+   		</manifest>
+   	</jar>
+   	
+   	<exec executable="java">
+   		<arg value="-jar"/>
+   		<arg file="${javase.dist.path}/${codename1.displayName}.jar"/>
+   	</exec>
+   	
+	
+</target>
+
+<target name="build-skins">
+        <copy file="${codename1.repo.path}/Themes/androidTheme.res" todir="${codename1.repo.path}/Skins/android" />
+        <copy file="${codename1.repo.path}/Themes/androidTheme.res" todir="${codename1.repo.path}/Skins/nexus" />
+        <copy file="${codename1.repo.path}/Themes/iPhoneTheme.res" todir="${codename1.repo.path}/Skins/ipad" />
+        <copy file="${codename1.repo.path}/Themes/iPhoneTheme.res" todir="${codename1.repo.path}/Skins/iphone4" />
+        <copy file="${codename1.repo.path}/Themes/iPhoneTheme.res" todir="${codename1.repo.path}/Skins/ipad3" />
+        <copy file="${codename1.repo.path}/Themes/iPhoneTheme.res" todir="${codename1.repo.path}/Skins/iphone3gs" />
+        <copy file="${codename1.repo.path}/Themes/iPhoneTheme.res" todir="${codename1.repo.path}/Skins/iphone5" />
+        <copy file="${codename1.repo.path}/Themes/blackberry_theme.res" todir="${codename1.repo.path}/Skins/torch" />
+        <copy file="${codename1.repo.path}/Themes/android_holo_light.res" todir="${codename1.repo.path}/Skins/xoom" />
+        <copy file="${codename1.repo.path}/Themes/winTheme.res" todir="${codename1.repo.path}/Skins/lumia" />
+
+        
+        <zip basedir="${codename1.repo.path}/Skins/nexus" destfile="${codename1.repo.path}/Skins/nexus.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/torch" destfile="${codename1.repo.path}/Skins/torch.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/android" destfile="${codename1.repo.path}/Skins/android.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/feature_phone" destfile="${codename1.repo.path}/Skins/feature_phone.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/ipad" destfile="${codename1.repo.path}/Skins/ipad.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/ipad3" destfile="${codename1.repo.path}/Skins/ipad3.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/iphone3gs" destfile="${codename1.repo.path}/Skins/iphone3gs.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/iphone4" destfile="${codename1.repo.path}/Skins/iphone4.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/iphone5" destfile="${codename1.repo.path}/Skins/iphone5.skin" compress="false">
+            <exclude name="**/svn/"/>
+            <exclude name="*.psd"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/xoom" destfile="${codename1.repo.path}/Skins/xoom.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+        <zip basedir="${codename1.repo.path}/Skins/lumia" destfile="${codename1.repo.path}/Skins/lumia.skin" compress="false">
+            <exclude name="**/svn/"/>
+        </zip>
+    </target>   
+
+
+<target name="build-for-android-device-locally" depends="">
 	<delete dir="${android.dist.path}"/>
 	<mkdir dir="${android.assets.path}"/>
 	<mkdir dir="${android.res.path}"/>
@@ -89,7 +189,7 @@
    	
    	<javac srcdir="${android.src.path}"
    		  destdir="${android.obj.path}"
-   		  classpath="${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar:${android.obj.path}"
+   		  classpath="${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar:${android.obj.path}:${codename1.androidport.path}/lib/zooz_iap.jar"
    		  source="1.6"
    		  target="1.6"
    		  debug="on"/>
@@ -152,7 +252,7 @@
 
 </target>
 
-<target name="build-for-ios-device-locally" depends="clean,copy-ios-override,jar,clean-override">
+<target name="build-for-ios-device-locally" depends="">
         
         
         <delete dir="${distapp.path}"/>
@@ -234,6 +334,20 @@
            <arg file="${xcodeproj.path}/project.pbxproj"/>
            <fileset dir="${resources.path}"/>
        </apply>
+       
+       <exec executable="${python.path}" dir="${buildscripts.path}">
+       		<arg file="${xcodeadd.path}"/>
+       		<arg file="${xcodeproj.path}/project.pbxproj"/>
+       		<arg file="${ios.sdk.path}/usr/lib/libxml2.2.dylib"/>
+       </exec>
+       <exec executable="${python.path}" dir="${buildscripts.path}">
+       		<arg file="${xcodeadd.path}"/>
+       		<arg file="${xcodeproj.path}/project.pbxproj"/>
+       		<arg file="${ios.sdk.path}/System/Library/Frameworks/Security.framework"/>
+       </exec>
+       <exec executable="open">
+       		<arg file="${xcodeproj.path}"/>
+       </exec>
       
        
     </target>
