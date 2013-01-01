@@ -78,11 +78,7 @@ public class CookiesTest extends BaseTest implements Runnable  {
                 
             }
 
-            @Override
-            public boolean shouldLoadURL(String url) {
-                Log.p("in should load url");
-                return super.shouldLoadURL(url);
-            }
+            
             
             
             

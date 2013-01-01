@@ -10,6 +10,7 @@ import com.codename1.ui.BrowserComponent;
 import com.codename1.ui.Display;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
+import com.codename1.ui.events.BrowserNavigationCallback;
 import com.codename1.util.StringUtil;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -22,7 +23,9 @@ import java.util.Vector;
 public class JavascriptContext  {
     public static boolean DEBUG=false;
     BrowserComponent browser;
-    private ActionListener urlListener, scriptMessageListener;
+    private ActionListener scriptMessageListener;
+    private BrowserNavigationCallback browserNavigationCallback;
+    private BrowserNavigationCallback previousNavigationCallback;
     String jsLookupTable;
     int objectId = 0;
     private Hashtable callbacks = new Hashtable();
@@ -37,7 +40,7 @@ public class JavascriptContext  {
     
     public JavascriptContext(BrowserComponent c){
         jsLookupTable = LOOKUP_TABLE+(contextId++);
-        this.urlListener = new URLListener();
+        this.browserNavigationCallback = new NavigationCallback();
         this.scriptMessageListener = new ScriptMessageListener();
         this.setBrowserComponent(c);
     }
@@ -63,11 +66,15 @@ public class JavascriptContext  {
     }
     
     private void uninstall(){
-        browser.removeWebEventListener("shouldLoadURL", urlListener);
+        //browser.removeWebEventListener("shouldLoadURL", urlListener);
+        browser.setBrowserNavigationCallback(previousNavigationCallback);
         browser.removeWebEventListener("scriptMessageReceived", scriptMessageListener);
     }
     private void install(){
-        browser.addWebEventListener("shouldLoadURL", urlListener);
+        //browser.addWebEventListener("shouldLoadURL", urlListener);
+        previousNavigationCallback = browser.getBrowserNavigationCallback();
+        browser.setBrowserNavigationCallback(browserNavigationCallback);
+        
         browser.addWebEventListener("scriptMessageReceived", scriptMessageListener);
     }
     
@@ -167,19 +174,21 @@ public class JavascriptContext  {
         
     }
     
-    
-    private class URLListener implements ActionListener {
+    private class NavigationCallback implements BrowserNavigationCallback {
 
-        public void actionPerformed(ActionEvent evt) {
-            //if ( true ) return;
-            String url = (String)evt.getSource();
+        public boolean shouldNavigate(String url) {
+            
             if ( url.indexOf("cn1command:") == 0 ){
                 //.. Handle the cn1 callbacks
                 dispatchCallback(url);
-                evt.consume();
+                return false;
             }
+            return previousNavigationCallback.shouldNavigate(url);
         }
+        
     }
+    
+    
     
     private class ScriptMessageListener implements ActionListener {
 

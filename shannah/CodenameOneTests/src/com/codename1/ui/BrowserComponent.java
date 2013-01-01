@@ -23,9 +23,9 @@
  */
 package com.codename1.ui;
 
-import com.codename1.io.Log;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
+import com.codename1.ui.events.BrowserNavigationCallback;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.util.EventDispatcher;
 import java.util.Enumeration;
@@ -48,12 +48,20 @@ import java.util.Vector;
 public class BrowserComponent extends Container {
     private Hashtable listeners;
     private PeerComponent internal;
+    BrowserNavigationCallback browserNavigationCallback;
 
     /**
      * This constructor will work as expected when a browser component is supported, see isNativeBrowserSupported()
      */
     public BrowserComponent() {
         setUIID("BrowserComponent");
+        browserNavigationCallback = new BrowserNavigationCallback(){
+
+            public boolean shouldNavigate(String url) {
+                return true;
+            }
+            
+        };
         PeerComponent c = Display.getInstance().getImplementation().createBrowserComponent(this);
         setLayout(new BorderLayout());
         addComponent(BorderLayout.CENTER, c);
@@ -242,46 +250,12 @@ public class BrowserComponent extends Container {
         }
     }
     
-    /**
-     * Checks to see if a URL should be loaded.  This is useful for overriding
-     * the handling of certain types of URLs.  It enables event handlers to handle
-     * the URL in their own way, and indicate via the event.consume() that they
-     * are handling it.
-     * 
-     * This method is called before the URL is loaded.
-     * 
-     * <strong>NOTE:  This method and the shouldLoadURL event will be run
-     * on the main GUI thread (not the EDT) because it needs to block so that
-     * it can return a value to the caller - and we cannot afford a deadlock.</strong>
-     * 
-     * @param url The URL that is being checked.
-     * @return True if the URL should be loaded normally.  False if the URL
-     * should not be loaded.
-     */
-    public boolean shouldLoadURL(String url){
-        ActionEvent evt = new ActionEvent(url);
-        EventDispatcher evd = getEventDispatcher("shouldLoadURL", false);
-        if (evd != null ){
-            Vector listeners = evd.getListenerVector();
-            Log.p("About to fire shouldLoadURL web event "+url);
-
-            // Note:  We run this on the current thread rather than using the 
-            // event dispatcher's fireEvent methods because we need to block
-            // and we can't block the EDT lest we call a deadlock of some kind.
-            if ( listeners != null ){
-                Enumeration e = listeners.elements();
-                while ( e.hasMoreElements() ){
-                    if ( evt.isConsumed() ) break;
-                    ActionListener l = (ActionListener)e.nextElement();
-                    l.actionPerformed(evt);
-
-                }
-            }
-            Log.p("After firing shouldLoadURL web event "+url);
-        }
-        
-        
-        return !evt.isConsumed();
+    public void setBrowserNavigationCallback(BrowserNavigationCallback callback){
+        this.browserNavigationCallback = callback;
+    }
+    
+    public BrowserNavigationCallback getBrowserNavigationCallback(){
+        return this.browserNavigationCallback;
     }
 
     /**

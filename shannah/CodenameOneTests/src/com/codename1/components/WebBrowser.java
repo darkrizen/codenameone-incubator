@@ -33,6 +33,7 @@ import com.codename1.ui.BrowserComponent;
 import com.codename1.ui.Component;
 import com.codename1.ui.Container;
 import com.codename1.ui.events.ActionListener;
+import com.codename1.ui.events.BrowserNavigationCallback;
 import com.codename1.ui.html.DefaultHTMLCallback;
 import com.codename1.ui.html.HTMLCallback;
 import com.codename1.ui.layouts.BorderLayout;
@@ -62,13 +63,8 @@ public class WebBrowser extends Container {
         super(new BorderLayout());
         if (BrowserComponent.isNativeBrowserSupported()) {
             isNative = true;
-            BrowserComponent b = new BrowserComponent(){
-
-                public boolean shouldLoadURL(String url) {
-                    return super.shouldLoadURL(url) && WebBrowser.this.shouldLoadURL(url);
-                }
-                
-            };
+            BrowserComponent b = new BrowserComponent();
+            
             b.addWebEventListener("onStart", new ActionListener() {
 
                 public void actionPerformed(ActionEvent evt) {
@@ -200,8 +196,20 @@ public class WebBrowser extends Container {
     public void onLoad(String url) {
     }
     
-    public boolean shouldLoadURL(String url){
-        return true;
+    public void setBrowserNavigationCallback(BrowserNavigationCallback callback){
+        if ( BrowserComponent.isNativeBrowserSupported() ){
+            ((BrowserComponent)this.getInternal()).setBrowserNavigationCallback(callback);
+        } else {
+            // Do nothing in this case... perhaps add later...?
+        }
+    }
+    
+    public BrowserNavigationCallback getBrowserNavigationCallback(){
+        if ( BrowserComponent.isNativeBrowserSupported() ){
+            return ((BrowserComponent)this.getInternal()).getBrowserNavigationCallback();
+        } else {
+            return null;
+        }
     }
 
     /**
