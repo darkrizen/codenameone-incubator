@@ -4,10 +4,12 @@
  */
 package ca.weblite.codename1.js;
 
-import java.util.Vector;
-
 /**
- *
+ * A callback function that can be registered with a Javascript context to allow
+ * Javascript to call into Java.
+ * 
+ * @see JavascriptContext.registerCallback()
+ * @see JSObject.registerCallback()
  * @author shannah
  */
 public interface JSFunction {

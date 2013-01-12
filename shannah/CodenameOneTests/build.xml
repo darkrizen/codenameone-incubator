@@ -174,7 +174,7 @@
             icon="${codename1.icon}"
             vendor="${codename1.vendor}"
             subtitle="${codename1.secondaryTitle}"
-            
+            includeSource="true"
             targetType="android"
             keystoreAlias="${codename1.android.keystoreAlias}"
             keystore="${codename1.android.keystore}"

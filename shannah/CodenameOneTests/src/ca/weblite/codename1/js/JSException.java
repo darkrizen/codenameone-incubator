@@ -8,7 +8,7 @@ package ca.weblite.codename1.js;
  *
  * @author shannah
  */
-public class JSException extends RuntimeException {
+class JSException extends RuntimeException {
     public JSException(String msg){
         super(msg);
     }

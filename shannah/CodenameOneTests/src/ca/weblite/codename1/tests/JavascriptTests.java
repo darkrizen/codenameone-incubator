@@ -20,6 +20,45 @@ public class JavascriptTests extends BaseTest {
     
     JavascriptContext ctx;
     
+    public void anotherTest(){
+        final WebBrowser b = new WebBrowser(){
+            @Override
+            public void onLoad(String url) {
+                // Placed on onLoad because we need to wait for page 
+                // to load to interact with it.
+                
+                BrowserComponent c = (BrowserComponent)this.getInternal();
+                
+                // Create a Javascript context for this BrowserComponent
+                JavascriptContext ctx = new JavascriptContext(c);
+                
+                // Now use the context to interact with Javascript environment....
+                
+                // ...
+            } 
+        };  
+    }
+    
+    public void loadingPrimitives(){
+        final WebBrowser b = new WebBrowser(){
+            @Override
+            public void onLoad(String url) {
+                // Placed on onLoad because we need to wait for page 
+                // to load to interact with it.
+                
+                BrowserComponent c = (BrowserComponent)this.getInternal();
+                
+                // Create a Javascript context for this BrowserComponent
+                JavascriptContext ctx = new JavascriptContext(c);
+                
+                // Now use the context to interact with Javascript environment....
+                
+                String pageContent = (String)ctx.get("document.body.innerHTML");
+               
+            } 
+        };  
+    }
+    
     public void testExecute(){
         
         final WebBrowser b = new WebBrowser(){

@@ -6,6 +6,7 @@ package ca.weblite.codename1.tests;
 
 import com.codename1.io.Log;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -13,67 +14,129 @@ import java.util.Vector;
  * @author shannah
  */
 public abstract class BaseTest {
-    public Vector passed = new Vector();
-    public Vector failed = new Vector();
+    public Hashtable results = new Hashtable();
     public Vector subtests = new Vector();
     
+    public static class Result {
+        public String msg;
+        public boolean result;
+        public Result(String msg, boolean result){
+            this.msg = msg;
+            this.result = result;
+        }
+    
+        public String toString(){
+            return msg;
+        }
+        
+    }
+    
+    public static class Failed extends Result {
+        public Failed(String msg){
+            super(msg, false);
+        }
+        
+        public String toString(){
+            return "Failed :"+msg;
+        }
+    }
+    
+    public static class Passed extends Result {
+        public Passed(String msg){
+            super(msg, true);
+        }
+        public String toString(){
+            return "Passed :"+msg;
+        }
+    }
+    
     public void assertTrue(boolean expr, String msg){
-        if ( expr ) passed.add(msg);
-        else failed.add(msg);
+        if ( expr ) results.put(msg, new Passed(msg));
+        else results.put(msg, new Failed(msg));
     }
     
     public void assertEquals(Object expected, Object actual, String label){
         if ( (expected != null && expected.equals(actual)) || ( expected == null && actual == null) ){
-            passed.add(label);
+            results.put(label, new Passed(label));
         } else {
-            failed.add(label+": expected ["+expected+"] but actual was ["+actual+"]");
+            results.put(label, new Failed(label+": expected ["+expected+"] but actual was ["+actual+"]"));
+        }
+    }
+    
+    protected void printResultLog(boolean result){
+        Enumeration e = results.elements();
+        
+        while ( e.hasMoreElements() ){
+            Result r = (Result)e.nextElement();
+            if ( r.result == result ){
+                Log.p(r.toString());
+            }
+        }
+        
+        e = subtests.elements();
+        while ( e.hasMoreElements() ){
+            ((BaseTest)e.nextElement()).printResultLog(result);
         }
     }
     
     public void printPassedLog(){
-        Enumeration e = passed.elements();
-        
-        while ( e.hasMoreElements() ){
-            Log.p(e.nextElement()+" Passed");
-        }
-        
-        e = subtests.elements();
-        while ( e.hasMoreElements() ){
-            ((BaseTest)e.nextElement()).printPassedLog();
-        }
+        printResultLog(true);
     }
     
     public void printFailedLog(){
-        Enumeration e = failed.elements();
-        while ( e.hasMoreElements() ){
-            Log.p(e.nextElement()+" Failed");
-        }
-        e = subtests.elements();
-        while ( e.hasMoreElements() ){
-            ((BaseTest)e.nextElement()).printFailedLog();
-        }
+        printResultLog(false);
     }
     
-    public int numPassed(){
-        int numPassed = passed.size();
-        
-        Enumeration e = subtests.elements();
+    public int numWithResult(boolean result){
+        int numPassed = 0;
+        Enumeration e = results.elements();
         while ( e.hasMoreElements() ){
-            numPassed += ((BaseTest)e.nextElement()).numPassed();
+            Result r = (Result)e.nextElement();
+            if ( r.result == result ){
+                numPassed++;
+            }
+        }
+        
+        
+        e = subtests.elements();
+        while ( e.hasMoreElements() ){
+            numPassed += ((BaseTest)e.nextElement()).numWithResult(result);
         }
         return numPassed;
         
     }
     
+    public int numPassed(){
+        return numWithResult(true);
+    }
+    
     public int numFailed(){
-        int numFailed = failed.size();
+        return numWithResult(false);
         
-        Enumeration e = subtests.elements();
+    }
+    
+    public Vector getResults(boolean result){
+        Vector out = new Vector();
+        Enumeration e = results.elements();
         while ( e.hasMoreElements() ){
-            numFailed += ((BaseTest)e.nextElement()).numFailed();
+            Result r = (Result)e.nextElement();
+            if ( r.result == result ){
+                out.add(r);
+            }
         }
-        return numFailed;
-        
+        e = subtests.elements();
+        while ( e.hasMoreElements() ){
+            out.addAll(((BaseTest)e.nextElement()).getResults(result));
+        }
+        return out;
+    }
+    
+    public Vector getPassed(){
+        return getResults(true);
+    }
+    
+    public Vector getFailed(){
+        return getResults(false);
     }
     
     public void printResults(){

@@ -17,34 +17,105 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 /**
- *
+ * Represents a Javascript context of a single BrowserComponent.  This provides
+ * support for executing Javascript in the BrowserComponent, registering Java
+ * callbacks to allow Javascript to call Java functions, and returning values
+ * from Javascript to Java.
+ * 
  * @author shannah
  */
 public class JavascriptContext  {
+    
+    /**
+     * Flag to enable/disable logging to a debug log.
+     */
     public static boolean DEBUG=false;
+    
+    /**
+     * The browser component on which this context operates.
+     * @see setBrowserComponent()
+     * @see getBrowserComponent()
+     */
     BrowserComponent browser;
+    
+    /**
+     * Listener that listens for JavascriptEvents.  A Javascript event
+     * is packaged by the JavascriptContext class in response to a 
+     * BrowserNavigationCallback.
+     */
     private ActionListener scriptMessageListener;
+    
+    /**
+     * A handler for navigation attempts.  This intercepts URLs of the 
+     * form cn1command:... .  This is how Javascript communicates/calls
+     * methods in this context.
+     */
     private BrowserNavigationCallback browserNavigationCallback;
+    
+    /**
+     * Stores the previous BrowserNavigationCallback object if one 
+     * was registered on the BrowserComponent.
+     */
     private BrowserNavigationCallback previousNavigationCallback;
+    
+    /**
+     * The name of the Javascript lookup table that is used to store and
+     * look up Javascript objects that have a JSObject proxy.
+     */
     String jsLookupTable;
+    
+    /**
+     * A running counter for the next object ID that is to be assigned to
+     * the next JSObject.  Each JSObject has an id associated with it which
+     * corresponds with its position in the Javascript lookup table.
+     */
     int objectId = 0;
+    
+    /**
+     * Stores registered JSFunction callbacks which can be called in response
+     * to a JavascriptEvent.
+     */
     private Hashtable callbacks = new Hashtable();
+    
+    /**
+     * Running counter to mark the context ID.  Each javascript context has its
+     * own lookup table, and this running counter allows us to generate a unique
+     * name for each lookup table.
+     */
     private static int contextId = 0;
-    private static int callbackId = 0;
     
+    /**
+     * A dummy javascript variable that is used occasionally to workaround some bugs.
+     */
     public static final String DUMMY_VAR = "ca_weblite_codename1_js_JavascriptContext_DUMMY_VAR";
+    
+    /**
+     * Javascript variable to store the return value of get() requests so that the value can be
+     * returned.
+     */
     public static final String RETURN_VAR = "ca_weblite_codename1_js_JavascriptContext_RETURN_VAR";
+    
+    /**
+     * The base name of the lookup table.  The actual name of the lookup table will have the
+     * contextId appended to it, and be stored as the member variable jsLookupTable.
+     */
     public static final String LOOKUP_TABLE = "ca_weblite_codename1_js_JavascriptContext_LOOKUP_TABLE";
-    public static final String STACK = "ca_weblite_codename1_js_JavascriptContext_STACK";
     
-    
+    /**
+     * Creates a Javascript context for the given BrowserComponent.
+     * @param c 
+     */
     public JavascriptContext(BrowserComponent c){
         jsLookupTable = LOOKUP_TABLE+(contextId++);
         this.browserNavigationCallback = new NavigationCallback();
         this.scriptMessageListener = new ScriptMessageListener();
         this.setBrowserComponent(c);
     }
-    
+    /**
+     * Sets the BrowserComponent on which this javascript context runs.
+     * 
+     * @param c The BrowserComponent on which the context runs.
+     */
     public final void setBrowserComponent(BrowserComponent c){
         if ( c != browser ){
             if ( browser != null ){
@@ -58,6 +129,15 @@ public class JavascriptContext  {
         }
     }
     
+    /**
+     * Executes a Javascript string and returns the string.  It is synchronized
+     * to disallow multiple threads from running javascript on the same BrowserComponent.
+     * 
+     * <p>This is just a thin wrapper around the BrowserComponent.executeAndReturnString() method.</p>
+     * 
+     * @param js
+     * @return The string result of executing the Javascript string.
+     */
     private synchronized String exec(String js){
         if ( DEBUG ){
             //Log.p("About to execute "+js);
@@ -65,11 +145,26 @@ public class JavascriptContext  {
         return browser.executeAndReturnString(installCode()+"("+js+")");
     }
     
+    /**
+     * Uninstalls the context from the browser component.  This just includes
+     * the listeners that are registered with the BrowserComponent so that 
+     * the context is informed of navigation callbacks and script message listeners.
+     * 
+     * @see install()
+     * 
+     */
     private void uninstall(){
         //browser.removeWebEventListener("shouldLoadURL", urlListener);
         browser.setBrowserNavigationCallback(previousNavigationCallback);
         browser.removeWebEventListener("scriptMessageReceived", scriptMessageListener);
     }
+    
+    /**
+     * Installs the context in the current browser component.  This effectively
+     * installs listeners in the browser component so that the context can 
+     * be notified of events like navigation callbacks and script message received
+     * events.
+     */
     private void install(){
         //browser.addWebEventListener("shouldLoadURL", urlListener);
         previousNavigationCallback = browser.getBrowserNavigationCallback();
@@ -79,6 +174,30 @@ public class JavascriptContext  {
     }
     
     
+    /**
+     * Executes a javascript string and returns the result of the execution as
+     * an appropriate object value depending on the type of value that was returned.
+     * 
+     * <p>Return value types will depend on the Javascript type returned.  The following
+     * table shows the mappings:</p>
+     * <table>
+     *  <thead>
+     *      <tr><th>Javascript Type</th><th>Java Return Type</th></tr>
+     *  </thead>
+     *  <tbody>
+     *      <tr><td>Number</td><th>java.lang.Double</td></tr>
+     *      <tr><td>String</td><th>java.lang.String</td><tr>
+     *      <tr><td>Boolean</td><td>java.lang.Boolean</td></tr>
+     *      <tr><td>Object</td><td>JSObject</td></tr>
+     *      <tr><td>Function</td><td>JSObject</td></tr>
+     *      <tr><td>null</td><td>null</td></tr>
+     *      <tr><td>undefined</td><td>null</td></tr>
+     *  </tbody>
+     * </table>
+     * 
+     * @param javascript The javascript to be executed.
+     * @return The result of the javascript expression.
+     */
     public synchronized Object get(String javascript){
         String js2 = RETURN_VAR+"=("+javascript+")";
         String res = exec(js2);
@@ -102,6 +221,43 @@ public class JavascriptContext  {
         }
     }
     
+    /**
+     * Sets a Javascript value given a compatible Java object value.  This is an abstraction
+     * upon javascript to execute <code>key = value</code>.
+     * 
+     * <p>The key is any Javascript expression whose result can be assigned. The value
+     * is a Java object that will be converted into a Javascript object as follows:</p>
+     * 
+     * <table>
+     *  <thead>
+     *      <tr><th>Java type</th><th>Converted to</th></tr>
+     *  </thead>
+     *  <tbody>
+     *      <tr><td>Double</td><th>Number</td></tr>
+     *      <tr><td>Integer</td><th>Number</td><tr>
+     *      <tr><td>Float</td><td>Number</td></tr>
+     *      <tr><td>Long</td><td>Number</td></tr>
+     *      <tr><td>String</td><td>String</td></tr>
+     *      <tr><td>JSObject</td><td>Object by ref</td></tr>
+     *      <tr><td>null</td><td>null</td></tr>
+     *  </tbody>
+     * </table>
+     * 
+     * <p>Hence if you want to set a Javascript string value, you can just
+     * pass a Java string into this method and it will be converted. </p>
+     * 
+     * <h3>JSObject "By Ref"</h3>
+     * <p>You may notice that if you pass a JSObject as the value parameter, the 
+     * table above indicates that it is passed by reference.  A JSObject merely 
+     * stores a reference to a Javascript object from a lookup table in the 
+     * Javascript runtime environment.  It is this lookup that is ultimately 
+     * assigned to the "key" when you pass a JSObject as the value.   This has
+     * the effect of setting the actual Javascript Object to this value, which
+     * is effectively a pass-by-reference scenario.</p>
+     * @param key A javascript expression whose result is being assigned the value.
+     * @param value The object or value that is being assigned to the Javascript variable
+     * on the left.</p>
+     */
     public synchronized void set(String key, Object value){
         String lhs = key;
         String rhs = "undefined";
@@ -124,10 +280,25 @@ public class JavascriptContext  {
     }
     
     
-    
+    /**
+     * Calls the appropriate callback method given a URL that was received 
+     * from the NavigationCallback.  It is set up to accept URLs of the 
+     * form cn1command:object.method?type1=value1&type2=value2&...&typen=valuen
+     * 
+     * <p>This method parses the URL and converts all arguments (including the 
+     * object and method) into their associated Java representations, then 
+     * generates a JavascriptEvent to fire on the scriptMessageReceived
+     * browser event.</p>
+     * 
+     * <p>This method will usually be called on the native platform's GUI
+     * thread, but it dispatches the resulting JavascriptEvent on the EDT
+     * using Display.callSerially()</p>
+     * @param request The URL representing the command that is being called.
+     */
     public void dispatchCallback(final String request){
         Runnable r = new Runnable(){
             public void run(){
+                Log.p("Handing callback: "+request);
                 String command = request.substring(request.indexOf(":")+1);
                 // Get the callback id
                 String objMethod = command.substring(0, command.indexOf("?"));
@@ -174,6 +345,12 @@ public class JavascriptContext  {
         
     }
     
+    /**
+     * A navigation callback that handles navigations to urls of the form
+     * cn1command:...
+     * 
+     * An instance of this class is installed in the resident BrowserComponent.
+     */
     private class NavigationCallback implements BrowserNavigationCallback {
 
         public boolean shouldNavigate(String url) {
@@ -189,7 +366,27 @@ public class JavascriptContext  {
     }
     
     
-    
+    /**
+     * Handler for scriptMessageReceived events.  It processes
+     * JavascriptEvents that encapsulate commands received from Javascript
+     * to Java.  The dispatchCallback() method intercepts the requests using
+     * a Navigation callback, then builds the JavascriptEvent object that
+     * encapsulates a Javascript method call.  This event is ultimately fired
+     * and then processed by this listener.
+     * 
+     * <p>This is intended to only process functions that are backed by 
+     * a JSFunction object.  Prior to this call, it is assumed that a JSFunction
+     * has been registered as a callback at the Javascript address provided via
+     * the JSObject.addCallback() or JavascriptContext.addCallback() methods.</p>
+     * 
+     * <p>If there is no JSFunction registered to handle this command then nothing
+     * will happen as a result of the request.</p>
+     * 
+     * @see JSFunction
+     * @see addCallback()
+     * @see JSObject.addCallback()
+     * 
+     */
     private class ScriptMessageListener implements ActionListener {
 
         public void actionPerformed(ActionEvent evt) {
@@ -209,13 +406,29 @@ public class JavascriptContext  {
     }
     
     
-    
+    /**
+     * Stock Javascript code that is included before all javascript requests to create
+     * a lookup table for the JS objects if one hasn't been created yet.
+     * @return 
+     */
     private String installCode(){
-        return "if (typeof("+jsLookupTable+") != 'object'){"+jsLookupTable+"=[]}"+
-            " if ( typeof("+STACK+") == 'undefined'){"+STACK+"=[]}";
+        return "if (typeof("+jsLookupTable+") == 'undefined'){"+jsLookupTable+"=[]}";
     }
     
     
+    /**
+     * Adds a JSFunction to handle calls to the specified Javascript object.  This 
+     * essentially installed a Javascript proxy method that sends a message via
+     * a navigation callback to the JavascriptContext so that it can cause Java
+     * code to be executed.
+     * 
+     * 
+     * @param source The Javascript object on which the callback is being registered
+     * as a member method.
+     * @param method The name of the method that will be created to execute our callback.
+     * @param callback The callback that is to be executed when source.method() is 
+     * executed in Javascript.
+     */
     public void addCallback(JSObject source, String method, JSFunction callback){
         String key = source.toJSPointer()+"."+method;
         callbacks.put(key, callback);
@@ -226,17 +439,18 @@ public class JavascriptContext  {
         String js = self+"."+method+"=function(){"+
                 "var len=arguments.length;var url='cn1command:"+self+"."+method+"?'; "+
                 "for (var i=0; i<len; i++){"+
-                    "var val = arguments[i];"+
-                    "if ( typeof(arguments[i]) == 'object' ){ "+
-                        "var id = arguments[i]."+id+"; "+
+                    "var val = arguments[i]; var strval=val;"+
+                    "if ( (typeof(val) == 'object') || (typeof(val) == 'function')){ "+
+                        "var id = val."+id+"; "+
                         "if (typeof(id)=='undefined' || typeof("+jsLookupTable+"[id]) == 'undefined' || "+jsLookupTable+"[id]."+id+"!=id){"+
-                            jsLookupTable+".push(arguments[i]); id="+jsLookupTable+".indexOf(arguments[i]); arguments[i]."+id+"=id;"+
+                            jsLookupTable+".push(val); id="+jsLookupTable+".indexOf(val); val."+id+"=id;"+
                         "}"+
-                        "val="+jsLookupTable+"[id]"+
+                        "strval='"+jsLookupTable+"['+id+']'"+
                     "}"+
-                    "url += encodeURIComponent(typeof(arguments[i]))+'='+encodeURIComponent(val);"+
+                    "url += encodeURIComponent(typeof(val))+'='+encodeURIComponent(strval);"+
                     "if (i < len-1){ url += '&';}"+
-                "} window.location=url;"+
+                //"} var iframe=document.createElement('iframe');iframe.src=url;document.body.appendChild(iframe)"+
+                "} window.location.href=url;"+
                 //"} return 56;"+
                 //"console.log('About to try to load '+url); var el = document.createElement('iframe'); el.setAttribute('src', url); document.body.appendChild(el); el.parentNode.removeChild(el); console.log(el); el = null"+
             "}";
@@ -246,6 +460,12 @@ public class JavascriptContext  {
         
     }
     
+    /**
+     * Removes a callback from a javascript object.
+     * @param source The Javascript object on which the callback is registered
+     *  as a method.
+     * @param method The name of the method that will be removed from the callback. 
+     */
     public void removeCallback(JSObject source, String method){
         String key = source.toJSPointer()+"."+method;
         callbacks.remove(key);
@@ -253,6 +473,25 @@ public class JavascriptContext  {
         exec(js);
     }
     
+    
+    public Object call(JSObject func, JSObject self, Object[] params){
+        return call(func.toJSPointer(), self, params);
+    }
+    /**
+     * Calls a Javascript function with the given parameters.  This would translate
+     * roughly into executing the following javascript:
+     * 
+     * <code>jsFunc.call(self, param1, param1, ..., paramn)</code>
+     * 
+     * @param jsFunc A javascript expression that resolves to a function object that
+     * is to be called.
+     * @param self The Javascript object that is used as "this" for the method call.
+     * @param params Array of the Javascript parameters, as Java objects.  These use
+     * the same conversions as are described in the docs for set().
+     * 
+     * @return Returns the return value converted to the corresponding Java
+     * object type.
+     */
     public Object call(String jsFunc, JSObject self, Object[] params){
         String var = RETURN_VAR+"_call";
         String js = var+"=("+jsFunc+").call("+self.toJSPointer();
@@ -266,7 +505,9 @@ public class JavascriptContext  {
             } else if ( param instanceof Boolean ){
                 js += ((Boolean)param).booleanValue()?"true":"false";
             } else if ( param instanceof String ){
-                js += "'"+StringUtil.replaceAll((String)param, "'", "\\'")+"'";
+                String escaped = StringUtil.replaceAll((String)param, "\\", "\\\\");
+                escaped = StringUtil.replaceAll(escaped, "'", "\\'");
+                js += "'"+escaped+"'";
             } else if ( param instanceof JSObject ){
                 js += ((JSObject)param).toJSPointer();
             } else {

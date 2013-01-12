@@ -17,13 +17,13 @@ import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.geom.Dimension;
 import com.codename1.ui.layouts.BorderLayout;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
+
 import java.util.Hashtable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 /**
  *
@@ -125,7 +125,7 @@ public class CookiesTest extends BaseTest implements Runnable  {
                             
                             String documentBody = bc.executeAndReturnString("document.body.innerHTML");
                             JSONParser p = new JSONParser();
-                            Hashtable res = (Hashtable)p.parse(new StringReader(documentBody));
+                            Hashtable res = (Hashtable)p.parse(new InputStreamReader(new ByteArrayInputStream(documentBody.getBytes())));
                             assertEquals("testvalue2", res.get("testcookie2"), "Cookie set in network request loaded in browser");
                         } catch (IOException ex) {
                             assertTrue(false, "Failed to parse JSON response from web browser");
