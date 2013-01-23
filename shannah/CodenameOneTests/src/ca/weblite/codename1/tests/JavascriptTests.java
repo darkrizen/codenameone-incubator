@@ -135,7 +135,7 @@ public class JavascriptTests extends BaseTest {
                     
                 };
                 
-                ctx.addCallback(newObject, "javaCallback", callback);
+                newObject.set("javaCallback", callback);
                 
                 newObject.call("javaCallback", new Object[0]);
                 

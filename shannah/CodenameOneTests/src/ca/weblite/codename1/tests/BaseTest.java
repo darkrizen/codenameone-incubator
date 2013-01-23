@@ -121,7 +121,7 @@ public abstract class BaseTest {
         while ( e.hasMoreElements() ){
             Result r = (Result)e.nextElement();
             if ( r.result == result ){
-                out.add(r);
+                out.addElement(r);
             }
         }
         e = subtests.elements();
@@ -148,7 +148,7 @@ public abstract class BaseTest {
     }
     
     public void addTest(BaseTest test){
-        subtests.add(test);
+        subtests.addElement(test);
     }
     
     public void run(){

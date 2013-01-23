@@ -22,6 +22,16 @@ import java.util.Vector;
  * callbacks to allow Javascript to call Java functions, and returning values
  * from Javascript to Java.
  * 
+ * <p>Typically you would obtain a context for a BrowserComponent via its constructor,
+ * passing the BrowserComponent to the context.</p>
+ * <p>E.g.</p>
+ * <code><pre>
+ * WebBrowser b = new WebBrowser();
+ * BrowserComponent bc = (BrowserComponent)b.getInternal();
+ * JavascriptContext ctx = new JavascriptContext(bc);
+ * JSObject window = (JSObject)ctx.get("window");
+ * </pre></code>
+ * 
  * @author shannah
  */
 public class JavascriptContext  {
@@ -87,19 +97,19 @@ public class JavascriptContext  {
     /**
      * A dummy javascript variable that is used occasionally to workaround some bugs.
      */
-    public static final String DUMMY_VAR = "ca_weblite_codename1_js_JavascriptContext_DUMMY_VAR";
+    static final String DUMMY_VAR = "ca_weblite_codename1_js_JavascriptContext_DUMMY_VAR";
     
     /**
      * Javascript variable to store the return value of get() requests so that the value can be
      * returned.
      */
-    public static final String RETURN_VAR = "ca_weblite_codename1_js_JavascriptContext_RETURN_VAR";
+    static final String RETURN_VAR = "ca_weblite_codename1_js_JavascriptContext_RETURN_VAR";
     
     /**
      * The base name of the lookup table.  The actual name of the lookup table will have the
      * contextId appended to it, and be stored as the member variable jsLookupTable.
      */
-    public static final String LOOKUP_TABLE = "ca_weblite_codename1_js_JavascriptContext_LOOKUP_TABLE";
+    static final String LOOKUP_TABLE = "ca_weblite_codename1_js_JavascriptContext_LOOKUP_TABLE";
     
     /**
      * Creates a Javascript context for the given BrowserComponent.
@@ -195,6 +205,26 @@ public class JavascriptContext  {
      *  </tbody>
      * </table>
      * 
+     * <h5>Example</h5>
+     * <code><pre>
+     * //Get the window object
+     * JSObject window = (JSObject)ctx.get("window");
+     * 
+     * // Create a new empty Javascript Object
+     * JSObject newObj = (JSObject)ctx.get("{}");
+     * 
+     * // Get the current document body contents as a string.
+     * String html = (String)ctx.get("document.body.innerHTML");
+     * 
+     * // Get a numerical result
+     * Double result = (Double)ctx.get("1+2");
+     * 
+     * // Get a Javascript function object
+     * JSObject func = (JSObject)ctx.get("function(a,b){ return a+b }");
+     * 
+     * // Get a boolean result
+     * Boolean res = (Boolean)ctx.get("1 &lt; 2");
+     * </pre></code>
      * @param javascript The javascript to be executed.
      * @return The result of the javascript expression.
      */
@@ -246,7 +276,7 @@ public class JavascriptContext  {
      * <p>Hence if you want to set a Javascript string value, you can just
      * pass a Java string into this method and it will be converted. </p>
      * 
-     * <h3>JSObject "By Ref"</h3>
+     * <h5>JSObject "By Ref"</h5>
      * <p>You may notice that if you pass a JSObject as the value parameter, the 
      * table above indicates that it is passed by reference.  A JSObject merely 
      * stores a reference to a Javascript object from a lookup table in the 
@@ -254,6 +284,31 @@ public class JavascriptContext  {
      * assigned to the "key" when you pass a JSObject as the value.   This has
      * the effect of setting the actual Javascript Object to this value, which
      * is effectively a pass-by-reference scenario.</p>
+     * 
+     * <h5>Examples</h5>
+     * 
+     * <code><pre>
+     * // Set the window.location.href to a new URL
+     * ctx.set("window.location.href", "http://google.com");
+     * 
+     * // Create a new JSObject, and set it as a property of another JSObject
+     * JSObject camera = (JSObject)ctx.get("{}");
+     * ctx.set("window.camera", camera);
+     * 
+     * // Set the name of the camera via JSObject.set()
+     * camera.set("name", "My Camera");
+     * 
+     * // Get the camera's name via Javascript
+     * String cameraName = (String)ctx.get("window.camera.name");
+     *     // Should be "My Camera"
+     * 
+     * // Set the camera name via context.set()
+     * ctx.set("camera.name", "New name");
+     * 
+     * String newName = (String)camera.get("name");
+     *     // Should be "New name"
+     * 
+     * </pre></code>
      * @param key A javascript expression whose result is being assigned the value.
      * @param value The object or value that is being assigned to the Javascript variable
      * on the left.</p>
@@ -295,10 +350,9 @@ public class JavascriptContext  {
      * using Display.callSerially()</p>
      * @param request The URL representing the command that is being called.
      */
-    public void dispatchCallback(final String request){
+    private void dispatchCallback(final String request){
         Runnable r = new Runnable(){
             public void run(){
-                Log.p("Handing callback: "+request);
                 String command = request.substring(request.indexOf(":")+1);
                 // Get the callback id
                 String objMethod = command.substring(0, command.indexOf("?"));
@@ -429,7 +483,7 @@ public class JavascriptContext  {
      * @param callback The callback that is to be executed when source.method() is 
      * executed in Javascript.
      */
-    public void addCallback(JSObject source, String method, JSFunction callback){
+    void addCallback(JSObject source, String method, JSFunction callback){
         String key = source.toJSPointer()+"."+method;
         callbacks.put(key, callback);
         
@@ -466,14 +520,63 @@ public class JavascriptContext  {
      *  as a method.
      * @param method The name of the method that will be removed from the callback. 
      */
-    public void removeCallback(JSObject source, String method){
+    void removeCallback(JSObject source, String method){
         String key = source.toJSPointer()+"."+method;
         callbacks.remove(key);
         String js = "delete "+source.toJSPointer()+"."+method;
         exec(js);
     }
     
-    
+    /**
+     * Calls a Javascript function (encapsulated in a JSObject) with a specified
+     * Javascript Object as the "this" context for the function call.  Also passes
+     * a set of arguments to the method.
+     * 
+     * <p>This operates almost exactly like the Javascript <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/apply">Function.apply() method</a>.</p>
+     * 
+     * <p>Note that JSObject also has a couple of <code>call()</code> methods 
+     * that may be more convenient to use as they will automatically set the "self"
+     * parameter to the JSObject callee.  This version of the method is handy in cases
+     * where you have been passed a function (perhaps as a callback) and you need to 
+     * execute that function in a particular context.</p>
+     * 
+     * <h5>Example</h5>
+     * 
+     * <code><pre>
+     * // Get the Array.push method as an object
+     * JSObject push = (JSObject)ctx.get("Array.prototype.push");
+     * 
+     * // Create a new array
+     * JSObject colors = (JSObject)ctx.get("['red', 'green', 'blue']");
+     * 
+     * // "Push" a new color onto the array directly using the JSObject's call()
+     * // method
+     * colors.call("push", "purple");
+     * 
+     * // Alternate method using JavascriptContext.call()
+     * ctx.call(push, colors, "orange");
+     * 
+     * // Check size of colors array now
+     * Double size = (Double)colors.get("length");
+     *     // Should be 5.0
+     * 
+     * // Get 4th color (should be purple)
+     * String purple = (String)colors.get(3);
+     * 
+     * // Get 5th color (should be orange)
+     * String orange = (String)colors.get(4);
+     * </pre></code>
+     * 
+     * 
+     * 
+     * @param func The Javascript function object that is being called.
+     * @param self Javascript Object that should act as "this" for the function call.
+     * @param params The parameters that should be passed to the function.  These
+     * parameters should be passed as Java objects but will be converted into their
+     * associated Javascript version.
+     * @return The result of the function call.  Javascript results will be automatically
+     * converted to their associated Java types.
+     */
     public Object call(JSObject func, JSObject self, Object[] params){
         return call(func.toJSPointer(), self, params);
     }
@@ -482,6 +585,8 @@ public class JavascriptContext  {
      * roughly into executing the following javascript:
      * 
      * <code>jsFunc.call(self, param1, param1, ..., paramn)</code>
+     * 
+     * 
      * 
      * @param jsFunc A javascript expression that resolves to a function object that
      * is to be called.

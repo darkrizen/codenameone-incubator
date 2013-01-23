@@ -12,6 +12,7 @@ import com.codename1.ui.Dialog;
 import com.codename1.ui.Display;
 import com.codename1.ui.Form;
 import com.codename1.io.Log;
+import com.codename1.ui.Container;
 import com.codename1.ui.Image;
 import com.codename1.ui.Label;
 import com.codename1.ui.List;
@@ -21,14 +22,16 @@ import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.events.DataChangedListener;
 import com.codename1.ui.events.SelectionListener;
 import com.codename1.ui.layouts.BorderLayout;
+import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.list.ListCellRenderer;
 import com.codename1.ui.list.ListModel;
 import com.codename1.ui.plaf.UIManager;
 import com.codename1.ui.util.Resources;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+
 
 public class CodenameOneTests {
 
@@ -46,6 +49,275 @@ public class CodenameOneTests {
     }
     
     public void start(){
+        Log.p("We are in the start method!!!");
+        Form hi = new Form("Hi World");
+        hi.setLayout(new BorderLayout());
+        hi.addComponent(BorderLayout.CENTER, new Label("Test label"));
+        hi.show();
+    }
+    
+    public void start_complex(){
+        try {
+            startThrows();
+        } catch (Throwable t){
+            t.printStackTrace();
+            final Form hi = new Form("Hi World");
+            hi.addComponent(new Label("An error occurred "+t.getMessage()));
+            hi.show();
+        }
+        
+    }
+    
+    public void startThrows() throws Throwable{
+        System.out.println("In CodenameOne startThrows");
+        Log.p("In CodenameOneTests.startsThrows()");
+        final WebBrowser b = new WebBrowser();
+        final Form hi = new Form("Hi World"){
+
+            @Override
+            protected void onShowCompleted() {
+                /*
+                try {
+                   Log.p("In onShowCompleted");
+                    super.onShowCompleted();
+                    b.setPage("<html><body>Hello World</body></html>", "file:///");
+                    this.removeComponent(b);
+                    this.addComponent(BorderLayout.CENTER, b);
+                    this.revalidate();  
+                    Log.p("Finished onShowCompleted");
+                } catch ( Throwable t){
+                    Log.p("Error occurred inOnShowCompleted: "+t.getMessage());
+                    t.printStackTrace();
+                }
+                * */
+            }
+            
+        };
+        hi.setLayout(new BorderLayout());
+        
+        
+        //final Label resultLabel = new Label("ResultPlaceholder");
+        final TextArea resultLabel = new TextArea();
+        resultLabel.setRows(5);
+        
+        resultLabel.setText("REsult placeholder");
+        
+        hi.addComponent(BorderLayout.NORTH, resultLabel);
+        hi.addComponent(BorderLayout.CENTER, b);
+        
+        Button btn = new Button("Run Test");
+        btn.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent evt) {
+                Log.p("In btn.actionPerformed");
+                try {
+                    if ( BrowserComponent.isNativeBrowserSupported() ){
+                        final BrowserComponent c = (BrowserComponent)b.getInternal();
+
+                        String result = c.executeAndReturnString("'test string'");
+                        resultLabel.setText(result);
+                    } else {
+                        resultLabel.setText("Native browser not supported");
+                    }
+                } catch ( Throwable t){
+                    Log.p("CodenameOneTests Error "+t.getMessage());
+                    t.printStackTrace();
+                }
+                
+            }
+            
+        });
+        
+        Container south = new Container(new BoxLayout(BoxLayout.X_AXIS));
+        
+        hi.addComponent(BorderLayout.SOUTH, south);
+        
+        
+        Button reload = new Button("Reload");
+        reload.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent evt) {
+                try {
+                    hi.removeComponent(b);
+                    hi.addComponent(BorderLayout.CENTER, b);
+                    b.setPage("<html><body>Hello World</body></html>", "file:///");
+                    
+                    hi.revalidate();
+                } catch (Throwable t){
+                    t.printStackTrace();
+                }
+            }
+            
+        });
+        south.addComponent(reload);
+        south.addComponent(btn);
+        
+        hi.show();
+        //b.setPage("<html><body>Hello World</body></html>", "file:///");
+        //b.setURL("http://solutions.weblite.ca/index.html");
+        
+        
+    }
+    
+    public void start_CameraExample(){
+        final Form hi = new Form("Hi World");
+        final WebBrowser b = new WebBrowser(){
+
+            @Override
+            public void onStart(String url) {
+                super.onStart(url);
+                Log.p("in onStart "+url);
+            }
+            
+            @Override
+            public void onLoad(String url) {
+                // Placed on onLoad because we need to wait for page 
+                // to load to interact with it.
+                Log.p("Inside onLoad");
+                final BrowserComponent c = (BrowserComponent)this.getInternal();
+                
+                // Create a Javascript context for this BrowserComponent
+                final JavascriptContext ctx = new JavascriptContext(c);
+                final JSObject camera = (JSObject)ctx.get("{}");
+                camera.set("capture", new JSFunction(){
+
+                    public void apply(JSObject self, final Object[] args) {
+                        Log.p("About to capture photo");
+                        Display.getInstance().capturePhoto(new ActionListener(){
+
+                            public void actionPerformed(ActionEvent evt) {
+                                Log.p("num args "+args.length);
+                                c.revalidate();
+                                // Get the image path from the taken image
+                                String imagePath = (String)evt.getSource();
+                                Log.p("Path is "+imagePath);
+                                //if ( true ) return;
+                                // Get the callback function that was provided
+                                // from javascript
+                                JSObject callback = (JSObject)args[0];
+                                
+                                
+                                //Log.p(json);
+                                //json = (String)ctx.get("console.log((function(a,b){return a+b}) )");
+                                ctx.call(
+                                        callback, // The function
+                                        camera,   // The "this" object
+                                        new Object[]{"file://"+imagePath}  // Parameters
+                                );
+                            }
+                            
+                        });
+                    }
+                    
+                });
+                
+                
+                ctx.set("window.camera", camera);
+                
+                
+                //c.executeAndReturnString("camera.capture((function(url){document.body.innerHTML=url}));");
+                
+            } 
+        };
+        
+        b.setURL("jar:///ca/weblite/codename1/tests/CameraExample.html");
+        //b.setURL("http://solutions.weblite.ca/index.html");
+        hi.setLayout(new BorderLayout());
+        hi.addComponent(BorderLayout.CENTER, b);
+        Button capture = new Button("Capture");
+        capture.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent evt) {
+                Display.getInstance().capturePhoto(new ActionListener(){
+
+                    public void actionPerformed(ActionEvent evt) {
+                        Log.p("Photo captured : "+evt.getSource());
+                        try {
+                            Label lbl = new Label(Image.createImage((String)evt.getSource()));
+                            hi.addComponent(BorderLayout.CENTER, lbl);
+                            hi.animate();
+                        } catch (IOException ex) {
+                            Log.e(ex);
+                        }
+                    }
+                    
+                });
+            }
+            
+        });
+        hi.addComponent(BorderLayout.SOUTH, capture);
+        hi.show();
+    }
+    
+    public void start12(){
+        
+        final Form hi = new Form("Hi World");
+        final WebBrowser b = new WebBrowser(){
+            @Override
+            public void onLoad(String url) {
+                // Placed on onLoad because we need to wait for page 
+                // to load to interact with it.
+                Log.p("Inside onLoad");
+                final BrowserComponent c = (BrowserComponent)this.getInternal();
+                
+                // Create a Javascript context for this BrowserComponent
+                final JavascriptContext ctx = new JavascriptContext(c);
+                JSObject window = (JSObject)ctx.get("window");
+                window.set("addAsync", new JSFunction(){
+
+                    public void apply(JSObject self, final Object[] args) {
+                        System.out.println("Params "+args[0]+", "+args[1]);
+                        Double a = (Double)args[0];
+                        Double b = (Double)args[1];
+                        JSObject callback = (JSObject)args[2];
+                        
+                        double result = a.doubleValue() + b.doubleValue();
+                        Log.p("Result is "+result);
+                        callback.call(new Object[]{new Double(result)});
+                        
+                    }
+                    
+                });
+                
+                
+                
+                //c.executeAndReturnString("camera.capture((function(url){document.body.innerHTML=url}));");
+                
+            } 
+        };
+        
+        //InputStream is = Display.getInstance().getResourceAsStream(this.getClass(), "AddAsync.html");
+        
+        
+        //b.setPage("<html><body><button onclick=\"camera.capture(function(url){var div = document.createElement('div');div.innerHTML = '<img src=\\''+url+'\\'/>'; document.body.appendChild(div);})\">Capture Photo</button></html>", null);
+        b.setURL("jar:///ca/weblite/codename1/tests/AddAsync.html");
+        hi.setLayout(new BorderLayout());
+        hi.addComponent(BorderLayout.CENTER, b);
+        Button capture = new Button("Capture");
+        capture.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent evt) {
+                Display.getInstance().capturePhoto(new ActionListener(){
+
+                    public void actionPerformed(ActionEvent evt) {
+                        Log.p("Photo captured : "+evt.getSource());
+                        try {
+                            Label lbl = new Label(Image.createImage((String)evt.getSource()));
+                            hi.addComponent(BorderLayout.CENTER, lbl);
+                            hi.animate();
+                        } catch (IOException ex) {
+                            Log.e(ex);
+                        }
+                    }
+                    
+                });
+            }
+            
+        });
+        hi.addComponent(BorderLayout.SOUTH, capture);
+        hi.show();
+    }
+    public void start10(){
         final Form hi = new Form("Hi World");
         final WebBrowser b = new WebBrowser();
         b.setPage("<html><body>Hello World!</body></html>", null);
@@ -84,7 +356,7 @@ public class CodenameOneTests {
                 // Create a Javascript context for this BrowserComponent
                 final JavascriptContext ctx = new JavascriptContext(c);
                 final JSObject camera = (JSObject)ctx.get("{}");
-                camera.addCallback("capture", new JSFunction(){
+                camera.set("capture", new JSFunction(){
 
                     public void apply(JSObject self, final Object[] args) {
                         Log.p("About to capture photo");
@@ -149,7 +421,7 @@ public class CodenameOneTests {
                             hi.addComponent(BorderLayout.CENTER, lbl);
                             hi.animate();
                         } catch (IOException ex) {
-                            throw new RuntimeException(ex);
+                            Log.e(ex);
                         }
                     }
                     
@@ -173,7 +445,7 @@ public class CodenameOneTests {
                 // Create a Javascript context for this BrowserComponent
                 JavascriptContext ctx = new JavascriptContext(c);
                 JSObject logger = (JSObject)ctx.get("{}");
-                logger.addCallback("log", new JSFunction(){
+                logger.set("log", new JSFunction(){
 
                     public void apply(JSObject self, Object[] args) {
                         String msg = (String)args[0];
