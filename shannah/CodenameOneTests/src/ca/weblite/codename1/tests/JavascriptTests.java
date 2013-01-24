@@ -8,8 +8,14 @@ import ca.weblite.codename1.js.JSFunction;
 import ca.weblite.codename1.js.JSObject;
 import ca.weblite.codename1.js.JavascriptContext;
 import com.codename1.components.WebBrowser;
+import com.codename1.io.ConnectionRequest;
 import com.codename1.io.Log;
+import com.codename1.io.NetworkManager;
+import com.codename1.io.Util;
 import com.codename1.ui.BrowserComponent;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Vector;
 
 /**
@@ -58,6 +64,50 @@ public class JavascriptTests extends BaseTest {
             } 
         };  
     }
+    
+    
+    public void testLoadJSONFromConnectionRequest(){
+        
+        final WebBrowser b = new WebBrowser(){
+
+            @Override
+            public void onLoad(String url) {
+                BrowserComponent bc = (BrowserComponent)this.getInternal();
+                final JavascriptContext ctx = new JavascriptContext(bc);
+                
+                ConnectionRequest req = new ConnectionRequest(){
+
+                    @Override
+                    protected void readResponse(InputStream input) throws IOException {
+                        StringBuffer sb = new StringBuffer();
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        Util.copy(input, bos);
+                        String jsonContentStr = new String(bos.toByteArray());
+                        System.out.println(jsonContentStr);
+                        JSObject response = (JSObject)ctx.get(jsonContentStr);
+                        String version = response.getString("version");
+                        assertEquals("1.0", version, "JSON content version from youtube should be 1.0");
+                        String title = response.getString("feed.title.$t");
+                        assertEquals("Most Popular", title, "Youtube JSON Feed Title");
+                        
+                        
+                    }
+                    
+                };
+                
+                req.setPost(false);
+                req.setUrl("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json");
+                NetworkManager.getInstance().addToQueue(req);
+                
+                
+            }
+            
+            
+        };
+        b.setPage("<html><body>Hello World</body></html>", "http://localhost/");
+        
+    }
+    
     
     public void testExecute(){
         
@@ -165,5 +215,6 @@ public class JavascriptTests extends BaseTest {
     
     public void _run(){
         testExecute();
+        this.testLoadJSONFromConnectionRequest();
     }
 }
