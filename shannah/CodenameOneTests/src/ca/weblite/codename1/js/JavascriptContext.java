@@ -615,6 +615,11 @@ public class JavascriptContext  {
                 js += "'"+escaped+"'";
             } else if ( param instanceof JSObject ){
                 js += ((JSObject)param).toJSPointer();
+            } else if ( param instanceof JSFunction ){
+                // We need to assign this JSFunction to something.
+                JSObject temp = (JSObject)this.get("{}");
+                temp.set("callback", param);
+                js += temp.toJSPointer()+".callback";
             } else {
                 js += "null";
             }

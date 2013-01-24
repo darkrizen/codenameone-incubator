@@ -48,7 +48,7 @@ public class CodenameOneTests {
         }
     }
     
-    public void start(){
+    public void start_hi_world(){
         Log.p("We are in the start method!!!");
         Form hi = new Form("Hi World");
         hi.setLayout(new BorderLayout());
@@ -647,7 +647,7 @@ public class CodenameOneTests {
         hi.show();
     }
     
-    public void start1() {
+    public void start() {
         if(current != null){
             current.show();
             return;

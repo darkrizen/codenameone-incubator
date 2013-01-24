@@ -139,6 +139,22 @@ public class JavascriptTests extends BaseTest {
                 
                 newObject.call("javaCallback", new Object[0]);
                 
+                
+                JSObject testFunc = (JSObject)ctx.get("function(callback){ callback('test');}");
+                
+                testFunc.call(new Object[]{ new JSFunction(){
+
+                    public void apply(JSObject self, Object[] args) {
+                        assertEquals(1, args.length, "Callback should have exactly one argument.");
+                        assertEquals("test", args[0], "Callback function should have received the string 'test'.");
+                    }
+                    
+                }});
+                
+                
+                
+                
+                
             }
             
         };

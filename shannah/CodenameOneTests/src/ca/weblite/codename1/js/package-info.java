@@ -22,7 +22,7 @@
             of your project.</p>
         
         <p>E.g. Step 1:  Check out from SVN:</p>
-        <code><pre>$ svn co svn checkout codenameone-incubator.googlecode.com/svn/trunk/shannah/CodenameOneTests/src/ca/weblite/codename1/js js</pre></code>
+        <code><pre>$ svn co svn checkout http://codenameone-incubator.googlecode.com/svn/trunk/shannah/CodenameOneTests/src/ca/weblite/codename1/js js</pre></code>
         
         <p>This will check out the js package into your current working directory.  Next, create the necessary directory structure in your
             project's src directory:</p>
