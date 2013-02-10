@@ -61,7 +61,147 @@
 <property name="javase.src.path" location="${javase.dist.path}/src"/>
 <property name="jdk.path" location="/Library/Java/JavaVirtualMachines/jdk1.7.0_10.jdk/Contents/Home"/>
 
+<!-- RIM Settings -->
+<property name="codename1.rim5port.path" location="${codename1.repo.path}/Ports/BlackBerryOS_5"/>
+<property name="codename1.rim4port.path" location="${codename1.repo.path}/Ports/BlackBerryOS_4_2"/>
+<property name="rim.dist.path" location="./dist/rim"/>
+<property name="rim.build.path" location="${rim.dist.path}/build"/>
+<property name="rim.src.path" location="${rim.dist.path}/src"/>
+<property name="retroweaver.home" location="${iosbuildtools.path}/retroweaver"/>
+<property name="proguard.home" location="${iosbuildtools.path}/proguard4.8"/>
 
+<property name="retroweaver.version" value="2.0.7"/>
+<property name="rim.project.path" value="${rim.dist.path}/project"/>
+<property name="jde.home" value="/Users/shannah/Desktop/BBEclipse/plugins/net.rim.ejde.componentpack7.1.0_7.1.0.10/"/>
+
+
+
+<taskdef name="retroweaver" classname="net.sourceforge.retroweaver.ant.RetroWeaverTask">
+  <classpath>
+    <fileset dir="${retroweaver.home}/lib" includes="**/*"/>
+    <pathelement location="${retroweaver.home}/release/retroweaver-all-${retroweaver.version}.jar"/>
+  </classpath>
+</taskdef>
+
+
+<target name="buid-for-rim-locally" depends="build-skins">
+	<delete dir="${rim.dist.path}"/>
+	<mkdir dir="${rim.src.path}"/>
+	<mkdir dir="${rim.build.path}"/>
+	<copy todir="${rim.src.path}">
+		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
+		<fileset dir="${codename1.rim4port.path}/src" excludes="**/svn/"/>
+		<fileset dir="${codename1.rim5port.path}/src" excludes="**/svn/"/>
+		<fileset dir="src" excludes="**/svn/"/>
+	</copy>	
+	
+	<!--<unjar src="${jde.home}/components/lib/net_rim_api.jar" dest="${rim.build.path}"/>-->
+	<!--<unjar src="${retroweaver.home}/release/retroweaver-rt-${retroweaver.version}.jar" dest="${rim.build.path}"/>
+        <unjar src="${retroweaver.home}/lib/backport-util-concurrent.jar" dest="${rim.build.path}"/>-->
+        
+       <!--<unjar src="lib/CLDC11.jar" dest="${rim.build.path}"/>-->
+        <replace token="@Override" value="">
+            <fileset dir="${rim.src.path}" includes="**/*.java"/>
+        </replace>
+        <!--
+        <replace token="java.io.FilterInputStream" value="">
+            <fileset dir="${rim.src.path}" includes="**/*.java"/>
+        </replace>-->
+        
+        
+        <copy todir="${rim.src.path}" overwrite="true">
+            <fileset dir="${iosbuildtools.path}/templates/rim-src-override" includes="**/*.java"/>
+        </copy>
+        
+        <!--
+        <delete dir="${rim.src.path}/java/lang/annotation"/>-->
+	<javac srcdir="${rim.src.path}"
+			destdir="${rim.build.path}"
+			classpath="${rim.build.path}:${jde.home}/components/lib/net_rim_api.jar:${codename1.rim4port.path}/lib/zxing_lib.jar"
+			bootclasspath="${jde.home}/components/lib/net_rim_api.jar"
+			debug="on"
+			source="1.1"
+			target="1.1"/>
+	<!--<delete file="${rim.build.path}/java/lang/annotation/ElementType.class"/>		
+	<delete file="${rim.build.path}/java/lang/annotation/RetentionPolicy.class"/>
+        <delete file="${rim.build.path}/java/lang/annotation/IncompleteAnnotationException.class"/>-->
+        <!--<delete dir="${rim.build.path}/edu/emory/mathcs/backport/java/util/concurrent"/>-->
+        
+        <!--<delete>
+            <fileset dir="${rim.build.path}/edu/emory/mathcs/backport/java/util/concurrent" includes="*Executor*.class"/>
+        </delete>-->
+	<!--<retroweaver srcdir="${rim.build.path}" target="1.2"  />-->
+        <!--
+        <exec executable="java">
+            <arg value="-jar"/>
+            <arg file="${proguard.home}/lib/proguard.jar"/>
+            <arg value="-injars"/>
+            <arg file="${rim.build.path}"/>
+            <arg value="-outjars"/>
+            <arg file="${rim.build.path}.proguard"/>
+            <arg value="-libraryjars"/>
+            <arg file="lib/CLDC11.jar"/>
+            <arg value="-libraryjars"/>
+            <arg file="${jde.home}/components/lib/net_rim_api.jar"/>
+            <arg value="-include"/>
+            <arg line="'${iosbuildtools.path}/templates/rim.pro'"/>
+            <arg line="-keep public class * extends net.rim.device.api.ui.UiApplication"/>
+            
+        </exec>
+        -->
+        <mkdir dir="${rim.project.path}"/>
+	<mkdir dir="${rim.project.path}/src"/>
+	<mkdir dir="${rim.project.path}/lib"/>
+	<mkdir dir="${rim.project.path}/res"/>
+	
+	<jar destfile="${rim.project.path}/lib/classes.jar">
+   		<fileset dir="${rim.build.path}" includes="**/*"/>
+   	</jar>
+   	<exec executable="${jde.home}/components/bin/preverify">
+   		<arg value="-classpath"/>
+   		<arg line="'${jde.home}/components/lib/net_rim_api.jar':'${codename1.rim4port.path}/lib/zxing_lib.jar':'${rim.build.path}'"/>
+                <arg value="-d"/>
+                <arg file="${rim.project.path}/lib/output"/>
+   		<arg file="${rim.project.path}/lib/classes.jar"/>
+   	</exec>
+        <copy file="${rim.project.path}/lib/output/classes.jar" tofile="${rim.project.path}/lib/classes.jar" overwrite="true"/>
+   	<!--<copy todir="${rim.project.path}/lib" file="${codename1.rim4port.path}/lib/zxing_lib.jar"/>-->
+   	<mkdir dir="${rim.project.path}/src/rimapp"/>
+        <copy todir="${rim.project.path}/src/rimapp" file="${iosbuildtools.path}/templates/RIMStub.java"/>
+	<replace file="${rim.project.path}/src/rimapp/RIMStub.java"
+            token="#MAIN_CLASS#"
+            value="${codename1.packageName}.${codename1.mainName}"/>
+            
+    <copy todir="${rim.project.path}/res">
+    	<fileset dir="${codename1.path}/src" excludes="**/*.java"/>
+		<fileset dir="${codename1.rim4port.path}/src" excludes="**/*.java"/>
+		<fileset dir="${codename1.rim5port.path}/src" excludes="**/*.java"/>
+		<fileset dir="src" excludes="**/*.java"/>
+    </copy>
+    
+    <copy tofile="${rim.project.path}/.project" file="${iosbuildtools.path}/templates/rim.project.xml"/>
+    <replace file="${rim.project.path}/.project" 
+    		token="#PROJECT_NAME#"
+    		value="${codename1.displayName}"/>
+    		
+	
+    <copy tofile="${rim.project.path}/.classpath" file="${iosbuildtools.path}/templates/rim.classpath.xml"/>
+    <copy tofile="${rim.project.path}/BlackBerry_App_Descriptor.xml" file="${iosbuildtools.path}/templates/BlackBerry_App_Descriptor.xml"/>
+    <replace file="${rim.project.path}/BlackBerry_App_Descriptor.xml"
+    		token="#OUTPUT_FILE_NAME#"
+    		value="${codename1.mainName}"/>
+    
+    <mkdir dir="${rim.project.path}/.settings"/>
+    <copy tofile="${rim.project.path}/.settings/org.eclipse.jdt.core.prefs" file="${iosbuildtools.path}/templates/rim.settings/org.eclipse.jdt.core.prefs"/>
+    
+    
+   	
+	
+	
+	
+	
+
+</target>
 
 <target name="build-for-JavaSE-locally" depends="build-skins">
 	<delete dir="${javase.dist.path}"/>
@@ -69,10 +209,11 @@
 	<mkdir dir="${javase.build.path}"/>
 	
 	<copy todir="${javase.src.path}">
-		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
-		<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/"/>
-		<fileset dir="src" excludes="**/svn/"/>
+		<fileset dir="src" excludes="**/svn/ com/codename1/**"/>
+    	<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/"/>
+		
 		<fileset dir="${codename1.repo.path}/Skins" includes="**/*.skin"/>
+		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
 		
 	</copy>
 	<copy todir="${javase.src.path}" file="${iosbuildtools.path}/templates/JavaSEStub.java"/>
@@ -274,11 +415,10 @@
             replace="bundle.identifier=${codename1.version}"/>
        
        <copy todir="${distapp.path}/src/java">
-           
-            <fileset dir="${codename1.path}/src"/>
-            <fileset dir="${codename1.factory.path}/src"/>
+           <fileset dir="src"/> 
+           <fileset dir="${codename1.factory.path}/src"/>
             <fileset dir="${codename1.iosport.path}/src"/>
-            <fileset dir="src"/>
+            <fileset dir="${codename1.path}/src"/>
        </copy>
        <mkdir dir="${distapp.path}/src/tmpbuild"/>
        <delete dir="${distapp.path}/src/java/my"/>
