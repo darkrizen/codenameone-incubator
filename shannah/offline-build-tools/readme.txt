@@ -66,3 +66,32 @@ Or you can do it from inside Netbeans's File tab, by right-clicking "build.xml",
 
 This will compile your application and build the apk.  If you have an appropriate Android device 
 connected  to your computer, it will attempt to install the apk onto the device.
+
+Building Your Application for JavaSE (i.e. the Simulator)
+=========================================================
+
+Assuming you have added the <import> into your application's build.xml file, you can either build this target from the command line:
+
+$ cd /path/to/my-project
+$ ant build-for-JavaSE-locally
+
+Or you can do it from inside Netbeans's File tab, by right-clicking "build.xml", then select "Run Target" > "Other Targets" > "build-for-JavaSE-locally".
+
+This will compile the application and run it locally on your computer.  This is effectively the equivalent of just running the project in Netbeans, but it can be handy if you have made changes to the Codename One core and you need to test them.
+
+
+Building Your Application for Blackberry
+=========================================================
+
+** NOTE: The RIM offline building doesn't work currently without modifying all CN1 files
+to comply with CLDC.  This is because retroweaving is required to make code compatible and
+it is not working yet in the offline build.....  IE.  BlackBerry offline builds are currently broken for the most part***
+
+Assuming you have added the <import> into your application's build.xml file, you can either build this target from the command line:
+
+$ cd /path/to/my-project
+$ ant build-for-rim-locally
+
+Or you can do it from inside Netbeans's File tab, by right-clicking "build.xml", then select "Run Target" > "Other Targets" > "build-for-rim-locally".
+
+This will compile the application and run it locally on your computer.  This is effectively the equivalent of just running the project in Netbeans, but it can be handy if you have made changes to the Codename One core and you need to test them.
