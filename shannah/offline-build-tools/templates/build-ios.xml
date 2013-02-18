@@ -415,9 +415,10 @@
             replace="bundle.identifier=${codename1.version}"/>
        
        <copy todir="${distapp.path}/src/java">
-           <fileset dir="src"/> 
-           <fileset dir="${codename1.factory.path}/src"/>
+           <fileset dir="src" excludes="com/codename1/**"/> 
+           
             <fileset dir="${codename1.iosport.path}/src"/>
+            <fileset dir="${codename1.factory.path}/src"/>
             <fileset dir="${codename1.path}/src"/>
        </copy>
        <mkdir dir="${distapp.path}/src/tmpbuild"/>

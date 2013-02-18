@@ -139,4 +139,16 @@
         
         
     </target>
+    
+    <target name="update-build-file">
+    	<!-- Create Ant Task -->
+        <copy file="${buildios.template.path}" tofile="${buildios.dist.path}" overwrite="true"/>
+        
+        <replace file="${buildios.dist.path}" token="___CODENAMEONE_PATH___" value="${codename1.path}"/>
+        <replace file="${buildios.dist.path}" token="___BUILDTOOLS_PATH___" value="${install.path}"/>
+        <replace file="${buildios.dist.path}" token="___XMLVM_PATH___" value="${xmlvm.bin.path}"/>
+        
+        
+        
+    </target>
 </project>
