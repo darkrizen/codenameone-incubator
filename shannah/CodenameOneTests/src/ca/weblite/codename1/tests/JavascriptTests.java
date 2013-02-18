@@ -9,13 +9,18 @@ import ca.weblite.codename1.js.JSObject;
 import ca.weblite.codename1.js.JavascriptContext;
 import com.codename1.components.WebBrowser;
 import com.codename1.io.ConnectionRequest;
+import com.codename1.io.JSONParser;
 import com.codename1.io.Log;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Util;
 import com.codename1.ui.BrowserComponent;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -63,6 +68,148 @@ public class JavascriptTests extends BaseTest {
                
             } 
         };  
+    }
+    
+    public void testLoadJSONViaWebBrowserWJSONParser(){
+        final WebBrowser b = new WebBrowser(){
+
+            @Override
+            public void onLoad(String url) {
+                BrowserComponent c = (BrowserComponent)this.getInternal();
+                JavascriptContext ctx = new JavascriptContext(c);
+                String responseString = (String)ctx.get("document.body.textContent");
+                byte[] responseBytes = responseString.getBytes();
+                ByteArrayInputStream bais = new ByteArrayInputStream(responseBytes);
+                InputStreamReader reader = new InputStreamReader(bais);
+                JSONParser parser = new JSONParser();
+                Hashtable response = null;
+                try {
+                    response = parser.parse(reader);
+                } catch (IOException ex){
+                    throw new RuntimeException(ex.getMessage());
+                }
+                String version = (String)response.get("version");
+                assertEquals("1.0", version, "WebBrowser--JSONParser: version from youtube should be 1.0");
+                Hashtable feed = (Hashtable)response.get("feed");
+                Hashtable title = (Hashtable)feed.get("title");
+                String titleStr = (String)title.get("$t");
+                assertEquals("Most Popular", titleStr, "WebBrowser--JSONParser: Youtube JSON Feed Title");
+                
+                
+            }
+            
+        };
+        b.setURL("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json");
+    }
+    
+    public void testLoadJSONUsingConnectionRequestAndJS(){
+        
+        ConnectionRequest req = new ConnectionRequest(){
+
+            @Override
+            protected void readResponse(InputStream input) throws IOException {
+                //super.readResponse(input);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                Util.copy(input, bos);
+                final String jsonContentStr = new String(bos.toByteArray());
+                WebBrowser b = new WebBrowser(){
+
+                    @Override
+                    public void onLoad(String url) {
+                        BrowserComponent c = (BrowserComponent)this.getInternal();
+                        JavascriptContext ctx = new JavascriptContext(c);
+                        JSObject response = (JSObject)ctx.get(jsonContentStr);
+                        String version = response.getString("version");
+                        assertEquals("1.0", version, "ConReq/JS/JSON content version from youtube should be 1.0");
+                        String title = response.getString("feed.title.$t");
+                        assertEquals("Most Popular", title, "ConReq/JS/Youtube JSON Feed Title");
+                    }
+                    
+                };
+                b.setPage("<html><body>Test</body></html>", "http://localhost/");
+                
+                
+                
+            }
+            
+        };
+        
+        req.setPost(false);
+        req.setHttpMethod("GET");
+        req.setUrl("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json");
+        
+        NetworkManager.getInstance().addToQueue(req);
+    }
+    
+    public void testLoadJSONUsingJSONParser(){
+        
+        ConnectionRequest req = new ConnectionRequest(){
+
+            @Override
+            protected void readResponse(InputStream input) throws IOException {
+                //super.readResponse(input);
+                
+                InputStreamReader reader = new InputStreamReader(input);
+                JSONParser parser = new JSONParser();
+                Hashtable response = parser.parse(reader);
+                String version = (String)response.get("version");
+                assertEquals("1.0", version, "JSONParser: version from youtube should be 1.0");
+                Hashtable feed = (Hashtable)response.get("feed");
+                Hashtable title = (Hashtable)feed.get("title");
+                String titleStr = (String)title.get("$t");
+                assertEquals("Most Popular", titleStr, "JSONParser: Youtube JSON Feed Title");
+                
+            }
+            
+        };
+        
+        req.setPost(false);
+        req.setHttpMethod("GET");
+        req.setUrl("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json");
+        
+        NetworkManager.getInstance().addToQueue(req);
+    }
+    
+    
+    public void testLoadJSONViaWebBrowserWJSONParse(){
+        final WebBrowser b = new WebBrowser(){
+
+            @Override
+            public void onLoad(String url) {
+                BrowserComponent c = (BrowserComponent)this.getInternal();
+                JavascriptContext ctx = new JavascriptContext(c);
+                JSObject response = (JSObject)ctx.get("JSON.parse(document.body.textContent)");
+                String version = response.getString("version");
+                assertEquals("1.0", version, "textContent/JSON.parse/JSON content version from youtube should be 1.0");
+                String title = response.getString("feed.title.$t");
+                assertEquals("Most Popular", title, "TextContent/JSON.parse/Youtube JSON Feed Title");
+                
+            }
+            
+        };
+        b.setURL("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json");
+    }
+    
+    public void testLoadJSONViaWebBrowser(){
+        final WebBrowser b = new WebBrowser(){
+
+            @Override
+            public void onLoad(String url) {
+                BrowserComponent c = (BrowserComponent)this.getInternal();
+                JavascriptContext ctx = new JavascriptContext(c);
+                String jsonStr = (String)ctx.get("document.body.textContent");
+                JSObject response = (JSObject)ctx.get(jsonStr);
+                String version = response.getString("version");
+                assertEquals("1.0", version, "textContent/JSON content version from youtube should be 1.0");
+                String title = response.getString("feed.title.$t");
+                assertEquals("Most Popular", title, "TextContent/Youtube JSON Feed Title");
+                //System.out.println("JSON Contents are:");
+                //System.out.println(json);
+                
+            }
+            
+        };
+        b.setURL("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json");
     }
     
     
@@ -216,5 +363,10 @@ public class JavascriptTests extends BaseTest {
     public void _run(){
         testExecute();
         this.testLoadJSONFromConnectionRequest();
+        this.testLoadJSONViaWebBrowser();
+        this.testLoadJSONViaWebBrowserWJSONParse();
+        this.testLoadJSONUsingJSONParser();
+        this.testLoadJSONUsingConnectionRequestAndJS();
+        this.testLoadJSONViaWebBrowserWJSONParser();
     }
 }

@@ -4,6 +4,10 @@ package ca.weblite.codename1.tests;
 import ca.weblite.codename1.js.JSFunction;
 import ca.weblite.codename1.js.JSObject;
 import ca.weblite.codename1.js.JavascriptContext;
+import ca.weblite.codename1.maps.DirectionsRequest;
+import ca.weblite.codename1.maps.DirectionsResult;
+import ca.weblite.codename1.maps.DirectionsRouteListener;
+import ca.weblite.codename1.maps.GoogleMap;
 import com.codename1.components.WebBrowser;
 import com.codename1.ui.BrowserComponent;
 import com.codename1.ui.Button;
@@ -17,6 +21,7 @@ import com.codename1.ui.Image;
 import com.codename1.ui.Label;
 import com.codename1.ui.List;
 import com.codename1.ui.TextArea;
+import com.codename1.ui.TextField;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.events.DataChangedListener;
@@ -647,7 +652,140 @@ public class CodenameOneTests {
         hi.show();
     }
     
-    public void start() {
+    public void start_bg_color(){
+        Form hi = new Form("Hi World");
+        hi.getStyle().setBgColor(0xFF0000);
+        //hi.setLayout(new BorderLayout());
+        //WebBrowser b = new WebBrowser();
+        BrowserComponent b = new BrowserComponent();
+        b.setNativeScrollingEnabled(false);
+        //b.setPinchToZoomEnabled(true);
+        //b.setOpaque(false);
+        b.setHeight(100);
+        //hi.addComponent(BorderLayout.CENTER, b);
+        hi.addComponent(b);
+        //b.setURL("http://google.com");
+        b.setPage("<html><body><h1>Hello World</h1></body></html>", "http://localhost");
+        hi.show();
+    }
+    
+    public void start_gmap_web(){
+        Form hi = new Form("Google Direction Service");
+        
+        WebBrowser b = new WebBrowser(){
+
+            @Override
+            public void onLoad(String url) {
+                
+            }
+            
+        };
+        
+        b.setURL("jar:///googlemaps.html");
+        hi.setLayout(new BorderLayout());
+        hi.addComponent(BorderLayout.CENTER, b);
+        hi.show();
+        
+    }
+    
+    public void start(){
+        Form hi = new Form("Google Direction Service");
+        
+        final GoogleMap map = new GoogleMap();
+        hi.setLayout(new BorderLayout());
+        
+        final TextField start = new TextField();
+        start.setHint("Start location");
+        
+        
+        final TextField end = new TextField();
+        end.setHint("Destination");
+        
+        Container form = new Container();
+        form.setLayout(new BorderLayout());
+        form.addComponent(BorderLayout.NORTH, start);
+        form.addComponent(BorderLayout.SOUTH, end);
+        
+        ActionListener routeListener = new ActionListener(){
+
+            public void actionPerformed(ActionEvent evt) {
+                if ( !"".equals(start.getText()) && !"".equals(end.getText())){
+                    DirectionsRequest req = new DirectionsRequest();
+                    req.setTravelMode(DirectionsRequest.TRAVEL_MODE_DRIVING);
+                    req.setOriginName(start.getText());
+                    req.setDestinationName(end.getText());
+                    map.route(req, new DirectionsRouteListener(){
+
+                        public void routeCalculated(DirectionsResult result) {
+                            System.out.println("Successfully mapped route");
+                        }
+                        
+                    });
+                }
+            }
+            
+        };
+        
+        start.addActionListener(routeListener);
+        end.addActionListener(routeListener);
+        
+        hi.addComponent(BorderLayout.NORTH, form);
+        
+        hi.addComponent(BorderLayout.CENTER, map);
+        hi.show();
+        
+    }
+    
+    
+    public void start_webbrowsers(){
+        Form hi = new Form("Hi World");
+        //hi.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
+        hi.setLayout(new BorderLayout());
+        final int num = 1;
+        //final WebBrowser[] b= new WebBrowser[num];
+        final WebBrowser b = new WebBrowser();
+        
+        final TextField urlField = new TextField();
+        urlField.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent evt) {
+                for ( int i=0; i<num; i++){
+                    b.setURL(urlField.getText());
+                }
+                
+            }
+            
+        });
+        
+        hi.addComponent(BorderLayout.NORTH, urlField);
+        
+        for ( int i=0; i<num; i++){
+            System.out.println("Adding web browser "+i);
+            //b[i] = new WebBrowser();
+            //b[i].setHeight(100);
+            //((BrowserComponent)b.getInternal()).setOpaque(false);
+            //((BrowserComponent)b.getInternal()).setNativeScrollingEnabled(false);
+            hi.addComponent(BorderLayout.CENTER, b);
+            //b.setURL("http://google.com");
+        }
+        
+        
+        
+        
+       
+       
+        
+        
+        hi.show();
+       
+        //b.setPage("<html><body style='background-color:transparent'><h1>Hello World</h1></body></html", "http://localhost/");
+        //b1.setURL("jar:///ca/weblite/codename1/tests/testcss.html");
+        //b2.setURL("jar:///ca/weblite/codename1/tests/testcss.html");
+        
+        
+    }
+    
+    public void start_tests() {
         if(current != null){
             current.show();
             return;
