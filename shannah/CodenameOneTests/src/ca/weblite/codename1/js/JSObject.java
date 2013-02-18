@@ -238,7 +238,7 @@ public class JSObject {
             String lt = context.jsLookupTable;
             String js = "var id = "+R1+"."+ID_KEY+"; "+
                         "if (typeof(id)=='undefined' || typeof("+lt+"[id]) == 'undefined' || "+lt+"[id]."+ID_KEY+"!=id){"+
-                            lt+".push("+R1+"); id="+lt+".indexOf("+R1+"); "+R1+"."+ID_KEY+"=id;"+
+                            lt+".push("+R1+"); id="+lt+".indexOf("+R1+"); Object.defineProperty("+R1+",\""+ID_KEY+"\",{value:id, enumerable:false});"+
                         "} id";
             
            
@@ -559,6 +559,28 @@ public class JSObject {
     public Object call(String key, Object[] params){
         return context.call(toJSPointer()+"."+key, this, params);
         
+    }
+    
+    public Object call(String key){
+        return call(key, new Object[]{});
+    }
+    
+    public int callInt(String key){
+        Double d = (Double)call(key);
+        return d.intValue();
+    }
+    
+    public double callDouble(String key){
+        Double d = (Double)call(key);
+        return d.doubleValue();
+    }
+    
+    public String callString(String key){
+        return (String)call(key);
+    }
+    
+    public JSObject callObject(String key){
+        return (JSObject)call(key);
     }
     
     /**

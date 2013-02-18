@@ -497,7 +497,7 @@ public class JavascriptContext  {
                     "if ( (typeof(val) == 'object') || (typeof(val) == 'function')){ "+
                         "var id = val."+id+"; "+
                         "if (typeof(id)=='undefined' || typeof("+jsLookupTable+"[id]) == 'undefined' || "+jsLookupTable+"[id]."+id+"!=id){"+
-                            jsLookupTable+".push(val); id="+jsLookupTable+".indexOf(val); val."+id+"=id;"+
+                            jsLookupTable+".push(val); id="+jsLookupTable+".indexOf(val); Object.defineProperty(val,\""+id+"\",{value:id, enumerable:false});"+
                         "}"+
                         "strval='"+jsLookupTable+"['+id+']'"+
                     "}"+
@@ -626,6 +626,7 @@ public class JavascriptContext  {
             
         }
         js += ")";
+        
         // We need to intialize the var to undefined in case the actual
         // javascript adjusts the window.location or doesn't cause a 
         // result for some reason.
