@@ -121,6 +121,10 @@
         <!-- Now patch XMLVM -->
         <replace file="${xmlvm.path}/lib/redlist.txt" token="java.nio.CharSequenceAdapter" value=""/>
         
+        <!-- This was causing an error. ClassNotFoundException NewInstance. ... Let's just 
+            remove it and see what happens -->
+            
+        <delete file="${codename1.path}/tools/codenameone-readonly/Ports/iOSPort/xmlvm/src/xmlvm2c/lib/proxies/org/xml/sax/helpers/XMLReaderFactory.java"/>
         <exec executable="ant" dir="${xmlvm.path}"/>
         <exec executable="ant" dir="${xmlvm.path}">
             <arg value="install"/>
