@@ -207,15 +207,24 @@
 	<delete dir="${javase.dist.path}"/>
 	<mkdir dir="${javase.src.path}"/>
 	<mkdir dir="${javase.build.path}"/>
-	
-	<copy todir="${javase.src.path}">
-		<fileset dir="src" excludes="**/svn/ com/codename1/**"/>
-    	<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/"/>
-		
-		<fileset dir="${codename1.repo.path}/Skins" includes="**/*.skin"/>
+	<copy todir="${javase.src.path}" overwrite="yes">
 		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
+	</copy>
+        <copy todir="${javase.src.path}" overwrite="yes">
+		<fileset dir="${codename1.repo.path}/Skins" includes="**/*.skin"/>
 		
 	</copy>
+        <copy todir="${javase.src.path}" overwrite="yes">
+		<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/"/>
+		
+	</copy>
+	<copy todir="${javase.src.path}" overwrite="yes">
+		<fileset dir="src" excludes="**/svn/ com/codename1/**"/>
+        </copy>
+        
+        
+        
+        
 	<copy todir="${javase.src.path}" file="${iosbuildtools.path}/templates/JavaSEStub.java"/>
 	<replace file="${javase.src.path}/JavaSEStub.java"
             token="#MAIN_CLASS#"
@@ -311,6 +320,7 @@
    	<copy todir="${android.assets.path}">
    		<fileset dir="${codename1.androidport.path}/src" excludes="**/*.java"/>
    		<fileset dir="native/android" excludes="**/*.java"/>
+   		<fileset dir="lib/impl/cls" excludes="**/*.java"/>
 	   <fileset dir="src" excludes="**/*.java"/>
    	</copy>
    	<copy file="${iosbuildtools.path}/templates/AndroidStub.java"
@@ -330,11 +340,14 @@
    	
    	<javac srcdir="${android.src.path}"
    		  destdir="${android.obj.path}"
-   		  classpath="${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar:${android.obj.path}:${codename1.androidport.path}/lib/zooz_iap.jar"
+   		  classpath="lib/impl/cls:${android.sdk.path}/platforms/android-${android.sdk.version}/android.jar:${android.obj.path}:${codename1.androidport.path}/lib/zooz_iap.jar"
    		  source="1.6"
    		  target="1.6"
    		  debug="on"/>
-   		  
+   	<copy todir="${android.obj.path}">
+            <fileset dir="lib/impl/cls" includes="**/*.class"/>
+            
+        </copy>	  
    		  
    	<exec executable="${dx.path}">
    		<arg value="--dex"/>
