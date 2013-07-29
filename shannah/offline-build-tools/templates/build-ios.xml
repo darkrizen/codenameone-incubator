@@ -466,7 +466,7 @@
        <mkdir dir="${xcoderes.path}"/>
        <copy todir="${xcoderes.path}">
            <fileset dir="src" excludes="**/*.java"/>
-           <fileset dir="lib/impl/cls" excludes="**/*.java"/>
+           <fileset dir="lib/impl/cls" excludes="**/*.class"/>
        </copy>
          
        
