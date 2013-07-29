@@ -1,4 +1,5 @@
 <project>
+    
 <!-- Update to point to the CodenameOne repository in your system -->
 <property name="codename1.repo.path" location="___CODENAMEONE_PATH___"/>
 
@@ -22,7 +23,8 @@
 <property name="velocity.dep.jar.path" location="${iosbuildtools.path}/lib/velocity-1.7-dep.jar"/>
 <property name="this.project.path" location="."/>
 
-<!-- You should need to change anything below this line -->
+
+<!-- You should not need to change anything below this line -->
 <property name="distapp.path" location="./dist/app"/>
 <property name="codename1.path" location="${codename1.repo.path}/CodenameOne"/>
 <property name="codename1.factory.path" location="${codename1.repo.path}/Factory"/>
@@ -30,13 +32,12 @@
 <property name="codename1.androidport.path" location="${codename1.repo.path}/Ports/Android"/>
 
 <property name="buildscripts.path" location="${iosbuildtools.path}/scripts"/>
-<property name="xcodeadd.path" location="${iosbuildtools.path}/scripts/xcodeadd.py"/>
+<property name="xcodeadd.path" location="${iosbuildtools.path}/scripts/prepare_xcode_project.php"/>
 <property name="resources.path" location="${distapp.path}/btres"/>
 <property name="xcodeproj.path" location="${distapp.path}/dist/${codename1.displayName}.xcodeproj"/>
 
 <!-- IOS Settings -->
-<property name="ios.sdk.path" location="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.0.sdk"/>
-
+<property name="ios.sdk.path" location="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk"/>
 
 <!-- android settings -->
 <property name="android.dist.path" location="./dist/android"/>
@@ -440,17 +441,34 @@
             srcdir="${distapp.path}/src/java"
             destdir="${distapp.path}/src/tmpbuild"
             includes="**/*.java"
-            classpath="${javac.classpath}:${build.classes.dir}:${dist.jar}:${processor.jar.path}:${velocity.jar.path}:${velocity.dep.jar.path}:${distapp.path}/src/java"
+            classpath="lib/impl/cls:${javac.classpath}:${build.classes.dir}:${dist.jar}:${processor.jar.path}:${velocity.jar.path}:${velocity.dep.jar.path}:${distapp.path}/src/java"
             >
            <compilerarg line="-processor ca.weblite.codename1.build.ios.NativeAnnotationProcessor"/>
            <compilerarg value="-s"/>
             <compilerarg path="${distapp.path}/src/java"/>
        </javac>
+       <copy todir="${distapp.path}/src/tmpbuild">
+       		<fileset dir="lib/impl/cls" includes="**/*.class"/>
+       </copy>
+       <copy todir="${distapp.path}/build/classes">
+       		<fileset dir="lib/impl/cls" includes="**/*.class"/>
+       </copy>
+       
        <mkdir dir="${resources.path}"/>
        <copy todir="${resources.path}">
-           <fileset dir="${codename1.iosport.path}/nativeSources" includes="**/*.a,**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
-           <fileset dir="src" includes="**/*.a,**/*.res,**/*.html,**/*.png,**/*.jpg,**/*.gif"/>
+           <fileset dir="${codename1.iosport.path}/nativeSources" excludes="**/*.java"/>
        </copy>
+       <!-- Our own resources directory from which a build phase in the Xcode project
+            will pull resources into the final application bundle.  We do this
+            instead of letting XMLVM handle resources because XMLVM will flatten 
+            the directory structure, WHICH SUCKS for numerous reasons!!!
+        -->
+       <mkdir dir="${xcoderes.path}"/>
+       <copy todir="${xcoderes.path}">
+           <fileset dir="src" excludes="**/*.java"/>
+           <fileset dir="lib/impl/cls" excludes="**/*.java"/>
+       </copy>
+         
        
             
        
@@ -483,22 +501,16 @@
             value="${codename1.packageName}.${codename1.mainName}"/>
        <delete dir="${distapp.path}/src/java/my"/>
        <exec executable="${ant.path}" dir="${distapp.path}/"/>
-       <apply executable="${python.path}" dir="${buildscripts.path}">
+       
+       <!-- Add a runScript build phase to copy resources into the app bundle
+            after executing. Also add some frameworks that are necessary.-->
+       <exec executable="/usr/bin/php" dir="${buildscripts.path}">
            <arg file="${xcodeadd.path}"/>
            <arg file="${xcodeproj.path}/project.pbxproj"/>
-           <fileset dir="${resources.path}"/>
-       </apply>
-       
-       <exec executable="${python.path}" dir="${buildscripts.path}">
-       		<arg file="${xcodeadd.path}"/>
-       		<arg file="${xcodeproj.path}/project.pbxproj"/>
-       		<arg file="${ios.sdk.path}/usr/lib/libxml2.2.dylib"/>
+           <arg file="${ios.sdk.path}/usr/lib/libxml2.2.dylib"/>
+           <arg file="${ios.sdk.path}/System/Library/Frameworks/Security.framework"/>
        </exec>
-       <exec executable="${python.path}" dir="${buildscripts.path}">
-       		<arg file="${xcodeadd.path}"/>
-       		<arg file="${xcodeproj.path}/project.pbxproj"/>
-       		<arg file="${ios.sdk.path}/System/Library/Frameworks/Security.framework"/>
-       </exec>
+      
        <exec executable="open">
        		<arg file="${xcodeproj.path}"/>
        </exec>
