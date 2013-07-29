@@ -140,7 +140,9 @@
         <replace file="${buildios.dist.path}" token="___XMLVM_PATH___" value="${xmlvm.bin.path}"/>
         
         
-        
+        <echo>Offline Build Tools Installed.  Please add the following tag to your application's build.xml file:
+            &lt;import file="${buildios.dist.path}"/&gt;
+        </echo>
         
     </target>
     
