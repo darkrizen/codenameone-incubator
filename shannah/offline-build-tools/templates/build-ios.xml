@@ -34,6 +34,7 @@
 <property name="buildscripts.path" location="${iosbuildtools.path}/scripts"/>
 <property name="xcodeadd.path" location="${iosbuildtools.path}/scripts/prepare_xcode_project.php"/>
 <property name="resources.path" location="${distapp.path}/btres"/>
+<property name="xcoderes.path" location="${distapp.path}/resources"/>
 <property name="xcodeproj.path" location="${distapp.path}/dist/${codename1.displayName}.xcodeproj"/>
 
 <!-- IOS Settings -->
@@ -90,10 +91,10 @@
 	<mkdir dir="${rim.src.path}"/>
 	<mkdir dir="${rim.build.path}"/>
 	<copy todir="${rim.src.path}">
-		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
-		<fileset dir="${codename1.rim4port.path}/src" excludes="**/svn/"/>
-		<fileset dir="${codename1.rim5port.path}/src" excludes="**/svn/"/>
-		<fileset dir="src" excludes="**/svn/"/>
+		<fileset dir="${codename1.path}/src" excludes="**/svn/" erroronmissingdir="false"/>
+		<fileset dir="${codename1.rim4port.path}/src" excludes="**/svn/" erroronmissingdir="false"/>
+		<fileset dir="${codename1.rim5port.path}/src" excludes="**/svn/" erroronmissingdir="false"/>
+		<fileset dir="src" excludes="**/svn/" erroronmissingdir="false"/>
 	</copy>	
 	
 	<!--<unjar src="${jde.home}/components/lib/net_rim_api.jar" dest="${rim.build.path}"/>-->
@@ -102,7 +103,7 @@
         
        <!--<unjar src="lib/CLDC11.jar" dest="${rim.build.path}"/>-->
         <replace token="@Override" value="">
-            <fileset dir="${rim.src.path}" includes="**/*.java"/>
+            <fileset dir="${rim.src.path}" includes="**/*.java" erroronmissingdir="false"/>
         </replace>
         <!--
         <replace token="java.io.FilterInputStream" value="">
@@ -111,7 +112,7 @@
         
         
         <copy todir="${rim.src.path}" overwrite="true">
-            <fileset dir="${iosbuildtools.path}/templates/rim-src-override" includes="**/*.java"/>
+            <fileset dir="${iosbuildtools.path}/templates/rim-src-override" includes="**/*.java" erroronmissingdir="false"/>
         </copy>
         
         <!--
@@ -156,7 +157,7 @@
 	<mkdir dir="${rim.project.path}/res"/>
 	
 	<jar destfile="${rim.project.path}/lib/classes.jar">
-   		<fileset dir="${rim.build.path}" includes="**/*"/>
+   		<fileset dir="${rim.build.path}" includes="**/*" erroronmissingdir="false"/>
    	</jar>
    	<exec executable="${jde.home}/components/bin/preverify">
    		<arg value="-classpath"/>
@@ -174,10 +175,10 @@
             value="${codename1.packageName}.${codename1.mainName}"/>
             
     <copy todir="${rim.project.path}/res">
-    	<fileset dir="${codename1.path}/src" excludes="**/*.java"/>
-		<fileset dir="${codename1.rim4port.path}/src" excludes="**/*.java"/>
-		<fileset dir="${codename1.rim5port.path}/src" excludes="**/*.java"/>
-		<fileset dir="src" excludes="**/*.java"/>
+    	<fileset dir="${codename1.path}/src" excludes="**/*.java" erroronmissingdir="false"/>
+		<fileset dir="${codename1.rim4port.path}/src" excludes="**/*.java" erroronmissingdir="false"/>
+		<fileset dir="${codename1.rim5port.path}/src" excludes="**/*.java" erroronmissingdir="false"/>
+		<fileset dir="src" excludes="**/*.java" erroronmissingdir="false"/>
     </copy>
     
     <copy tofile="${rim.project.path}/.project" file="${iosbuildtools.path}/templates/rim.project.xml"/>
@@ -209,18 +210,18 @@
 	<mkdir dir="${javase.src.path}"/>
 	<mkdir dir="${javase.build.path}"/>
 	<copy todir="${javase.src.path}" overwrite="yes">
-		<fileset dir="${codename1.path}/src" excludes="**/svn/"/>
+		<fileset dir="${codename1.path}/src" excludes="**/svn/" erroronmissingdir="false"/>
 	</copy>
         <copy todir="${javase.src.path}" overwrite="yes">
-		<fileset dir="${codename1.repo.path}/Skins" includes="**/*.skin"/>
+		<fileset dir="${codename1.repo.path}/Skins" includes="**/*.skin" erroronmissingdir="false"/>
 		
 	</copy>
         <copy todir="${javase.src.path}" overwrite="yes">
-		<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/"/>
+		<fileset dir="${codename1.javaseport.path}/src" excludes="**/svn/" erroronmissingdir="false"/>
 		
 	</copy>
 	<copy todir="${javase.src.path}" overwrite="yes">
-		<fileset dir="src" excludes="**/svn/ com/codename1/**"/>
+		<fileset dir="src" excludes="**/svn/ com/codename1/**" erroronmissingdir="false"/>
         </copy>
         
         
@@ -237,11 +238,11 @@
 
    		  debug="on"/>
    	<copy todir="${javase.build.path}">
-   		<fileset dir="${javase.src.path}" excludes="**/*.java"/>
+   		<fileset dir="${javase.src.path}" excludes="**/*.java" erroronmissingdir="false"/>
    	</copy>
    	<unjar src="${codename1.javaseport.path}/lib/sqlitejdbc-v056.jar" dest="${javase.build.path}"/>
    	<jar destfile="${javase.dist.path}/${codename1.displayName}.jar">
-   		<fileset dir="${javase.build.path}" includes="**/*"/>
+   		<fileset dir="${javase.build.path}" includes="**/*" erroronmissingdir="false"/>
    		<manifest>
    			<attribute name="Main-Class" value="JavaSEStub"/>
    		</manifest>
@@ -313,16 +314,16 @@
 	<mkdir dir="${android.bin.path}"/>
 	<mkdir dir="${android.obj.path}"/>
 	<copy todir="${android.src.path}">
-		<fileset dir="${codename1.path}/src" includes="**/*.java"/>
-	   <fileset dir="${codename1.androidport.path}/src" includes="**/*.java"/>
-	   <fileset dir="native/android" includes="**/*.java"/>
-	   <fileset dir="src" includes="**/*.java"/>
+		<fileset dir="${codename1.path}/src" includes="**/*.java" erroronmissingdir="false"/>
+	   <fileset dir="${codename1.androidport.path}/src" includes="**/*.java" erroronmissingdir="false"/>
+	   <fileset dir="native/android" includes="**/*.java" erroronmissingdir="false"/>
+	   <fileset dir="src" includes="**/*.java" erroronmissingdir="false"/>
    	</copy>
    	<copy todir="${android.assets.path}">
-   		<fileset dir="${codename1.androidport.path}/src" excludes="**/*.java"/>
-   		<fileset dir="native/android" excludes="**/*.java"/>
-   		<fileset dir="lib/impl/cls" excludes="**/*.java"/>
-	   <fileset dir="src" excludes="**/*.java"/>
+   		<fileset dir="${codename1.androidport.path}/src" excludes="**/*.java" erroronmissingdir="false"/>
+   		<fileset dir="native/android" excludes="**/*.java" erroronmissingdir="false"/>
+   		<fileset dir="lib/impl/cls" excludes="**/*.java" erroronmissingdir="false"/>
+	   <fileset dir="src" excludes="**/*.java" erroronmissingdir="false"/>
    	</copy>
    	<copy file="${iosbuildtools.path}/templates/AndroidStub.java"
         tofile="${android.src.path}/com/codename1/impl/android/AndroidStub.java" />
@@ -346,7 +347,7 @@
    		  target="1.6"
    		  debug="on"/>
    	<copy todir="${android.obj.path}">
-            <fileset dir="lib/impl/cls" includes="**/*.class"/>
+            <fileset dir="lib/impl/cls" includes="**/*.class" erroronmissingdir="false"/>
             
         </copy>	  
    		  
@@ -429,11 +430,11 @@
             replace="bundle.identifier=${codename1.version}"/>
        
        <copy todir="${distapp.path}/src/java">
-           <fileset dir="src" excludes="com/codename1/**"/> 
+            <fileset dir="src"/>
            
-            <fileset dir="${codename1.iosport.path}/src"/>
-            <fileset dir="${codename1.factory.path}/src"/>
-            <fileset dir="${codename1.path}/src"/>
+            <fileset dir="${codename1.iosport.path}/src" erroronmissingdir="false"/>
+            <fileset dir="${codename1.factory.path}/src" erroronmissingdir="false"/>
+            <fileset dir="${codename1.path}/src" erroronmissingdir="false"/>
        </copy>
        <mkdir dir="${distapp.path}/src/tmpbuild"/>
        <delete dir="${distapp.path}/src/java/my"/>
@@ -448,15 +449,15 @@
             <compilerarg path="${distapp.path}/src/java"/>
        </javac>
        <copy todir="${distapp.path}/src/tmpbuild">
-       		<fileset dir="lib/impl/cls" includes="**/*.class"/>
+       		<fileset dir="lib/impl/cls" includes="**/*.class" erroronmissingdir="false"/>
        </copy>
        <copy todir="${distapp.path}/build/classes">
-       		<fileset dir="lib/impl/cls" includes="**/*.class"/>
+       		<fileset dir="lib/impl/cls" includes="**/*.class" erroronmissingdir="false"/>
        </copy>
        
        <mkdir dir="${resources.path}"/>
        <copy todir="${resources.path}">
-           <fileset dir="${codename1.iosport.path}/nativeSources" excludes="**/*.java"/>
+           <fileset dir="${codename1.iosport.path}/nativeSources" excludes="**/*.java" erroronmissingdir="false"/>
        </copy>
        <!-- Our own resources directory from which a build phase in the Xcode project
             will pull resources into the final application bundle.  We do this
@@ -465,8 +466,10 @@
         -->
        <mkdir dir="${xcoderes.path}"/>
        <copy todir="${xcoderes.path}">
-           <fileset dir="src" excludes="**/*.java"/>
-           <fileset dir="lib/impl/cls" excludes="**/*.class"/>
+           
+           <fileset dir="src" excludes="**/*.java" erroronmissingdir="false"/>
+           <fileset dir="lib/impl/cls" excludes="**/*.class" erroronmissingdir="false"/>
+           <fileset dir="${codename1.path}/src" excludes="**/*.java" erroronmissingdir="false"/>
        </copy>
          
        
@@ -474,9 +477,9 @@
        
        <mkdir dir="${distapp.path}/src/objc"/>
        <copy todir="${distapp.path}/src/objc">
-           <fileset dir="${codename1.iosport.path}/nativeSources"/>
-           <fileset dir="native/ios" includes="*.m,*.h"/>
-           <fileset dir="${distapp.path}/src/java/" includes="*.h,*.m"/>
+           <fileset dir="${codename1.iosport.path}/nativeSources" erroronmissingdir="false"/>
+           <fileset dir="native/ios" includes="*.m,*.h" erroronmissingdir="false"/>
+           <fileset dir="${distapp.path}/src/java/" includes="*.h,*.m" erroronmissingdir="false"/>
        </copy>
        <zip zipfile="${distapp.path}/nativeios.jar" basedir="${distapp.path}/src/" includes="objc/**"/>
        <replace file="${distapp.path}/nbproject/project.properties"
